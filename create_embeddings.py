@@ -15,7 +15,7 @@ class EmbedCreator:
         self.model = hub.load(self._MODEL_URL)
 
     def create_embed(self, data: HasGetItem, mode: Literal["CPU", "GPU"] = "CPU") -> tf.Tensor:
-        with tf.device(f'/{mode}:0'):
+        with tf.device(f'/device:{mode}:0'):
             embeddings = self.model(data)
 
             norms = tf.norm(embeddings, axis=-1, keepdims=True)

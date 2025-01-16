@@ -4,7 +4,7 @@ import tensorflow_text as text
 from typing import Literal, Protocol
 
 
-# Вторая версия для BERT
+# Вторая версия для BERT (была проблема с выполнением на GPU)
 
 class HasGetItem(Protocol):
     def __getitem__(self, key):
@@ -32,9 +32,9 @@ class EmbedCreator:
         :param mode: Режим выполнения ("CPU" или "GPU").
         :return: Нормализованные эмбеддинги.
         """
-        with tf.device(f'/{mode}:0'):
+        with tf.device(f'/device:{mode}:0'):
 
-            embeddings = self._embedding_model(data)
+            embeddings = self._embedding_model.predict(data)
 
             norms = tf.norm(embeddings, axis=-1, keepdims=True)
             normalized_embeddings = embeddings / norms

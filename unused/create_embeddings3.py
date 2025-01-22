@@ -8,7 +8,7 @@ class EmbedCreator:
     """
     Создаёт эмбеддинги при помощи BERT (PyTorch-версия) из библиотеки transformers.
     """
-    MODEL_NAME: str = "bert-base-uncased"
+    MODEL_NAME: str = "paraphrase-MPNet-base-v2"
 
     def __init__(self) -> None:
         # Загружаем токенизатор
@@ -24,7 +24,7 @@ class EmbedCreator:
 
         :param data: Входные данные (одна строка или список строк).
         :param mode: Режим выполнения ("CPU" или "GPU").
-        :return: Нормализованные эмбеддинги (PyTorch-тензор).
+        :return: Нормализованные эмбеддинги (tensorflow-тензор).
         """
         device = torch.device("cuda" if (mode == "GPU" and torch.cuda.is_available()) else "cpu")
         self._model.to(device)

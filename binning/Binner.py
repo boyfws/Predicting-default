@@ -19,7 +19,7 @@ class Binner(TransformerMixin):
             self,
             X: pd.DataFrame,
             y: pd.Series
-    ):
+    ) -> None:
 
         X = X.copy()
 
@@ -43,7 +43,7 @@ class Binner(TransformerMixin):
     def transform(
             self,
             X: pd.DataFrame
-    ):
+    ) -> pd.DataFrame:
         X = X.copy()
         for el in self.optb_:
             X[el] = self.optb_[el].transform(X[el])
@@ -54,11 +54,11 @@ class Binner(TransformerMixin):
             self,
             X: pd.DataFrame,
             y: pd.Series
-    ):
+    ) -> pd.DataFrame:
         self.fit(X, y)
         return self.transform(X)
 
-    def plot_iv(self):
+    def plot_iv(self) -> None:
         plt.figure(figsize=(10, 10))
         x_y = sorted(self.iv_.items(), key=lambda x: -x[1])
         x = [el[0] for el in x_y]

@@ -54,7 +54,10 @@ class BinningTest:
             figsize: tuple[int, int],
     ):
         grid_w = 3
-        grid_h = len(num_columns) // grid_w + int((len(num_columns) % grid_w) != 0)
+        grid_h = len(num_columns) // grid_w
+        if grid_h * grid_w < len(num_columns):
+            grid_h += 1
+            
         fig, axs = plt.subplots(grid_h, grid_w, figsize=figsize)
 
         for i in range(grid_h):

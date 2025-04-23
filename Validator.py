@@ -17,7 +17,6 @@ class Validator:
     def __init__(
             self,
             plot_graphs: bool = True,
-            external_tests: bool = True,
             figsize: tuple[int, int] = (10, 10),
     ) -> None:
         self.general_gini = GeneralGini()
@@ -25,9 +24,9 @@ class Validator:
         self.binner_test = BinningTest()
         self.target_rate_test = TargetRateTest()
         self.calibration_curve_test = CalibrationCurveTest()
+        self.gini_change_test = GiniChangeTest()
 
         self.plot_graphs = plot_graphs
-        self.external_tests = external_tests
 
         self.figsize = figsize
 
@@ -175,7 +174,7 @@ class Validator:
             self,
             pred_p: np.ndarray,
             y_true: np.ndarray
-    ):
+    ) -> int:
         results = self.target_rate_test(
             pred_p,
             y_true,
@@ -212,7 +211,7 @@ class Validator:
     def _validate_curve_test(self,
                              pred_p: np.ndarray,
                              y_true: np.ndarray
-                            ):
+                            ) -> int:
 
         result_df = self.calibration_curve_test(
             pred_p,
@@ -258,26 +257,78 @@ class Validator:
 
         return score
 
+
+    def _validate_gini_change(self,
+                              y_train: np.ndarray,
+                              y_test: np.ndarray,
+                              y_pred_train: np.ndarray,
+                              y_pred_test: np.ndarray,
+                              ):
+        abs_diff, rel_diff = self.gini_change_test(
+            y_train,
+            y_test,
+            y_pred_train,
+            y_pred_test,
+            plot=self.plot_graphs,
+            figsize=self.figsize,
+        )
+
+        title = "Gini Change test"
+        if abs_diff > 5 and rel_diff > 20:
+            score = -1
+            self.console.print(
+                Panel(
+                    f"[red]❌ Test failed with absolute and relative diffs: {-abs_diff:.2f} p.p, {-rel_diff:.2f}%[/red]",
+                    title=title
+                )
+            )
+
+        elif abs_diff > 3 and rel_diff > 15:
+            score = 0
+            self.console.print(
+                Panel(
+                    f"[yellow]⚠️ Intermediate result with absolute and relative diffs: {-abs_diff:.2f} p.p, {-rel_diff:.2f}%[/yellow]",
+                    title=title
+                )
+            )
+        else:
+            score = 1
+            self.console.print(
+                Panel(
+                    f"[green]✅ Test passed with absolute and relative diffs: {-abs_diff:.2f} p.p, {-rel_diff:.2f}%[/green]",
+                    title=title
+                )
+            )
+
+        return score
+
     def validate(
             self,
             X: pd.DataFrame,
             y: pd.Series,
             model: Model,
+            train_data: tuple[np.ndarray, np.ndarray],
             binner: Optional[Binner] = None,
     ):
         if binner is None:
-            pred_prob = model.predict_proba(X)
+            y_pred_test = model.predict_proba(X)
+            y_pred_train = model.predict_proba(train_data[0])
         else:
-            X_transformed: pd.DataFrame = binner.transform(X)
-            pred_prob = model.predict_proba(X_transformed)
+            X_transformed_test = binner.transform(X)
+            X_transformed_train = binner.transform(train_data[0])
 
-        y_np = y.to_numpy()
+            y_pred_test = model.predict_proba(X_transformed_test)
+            y_pred_train = model.predict_proba(X_transformed_train)
 
-        score1 = self._validate_gini(y_np, pred_prob)
-        score2 = self._validate_features_gini(X.select_dtypes(include="number"), y_np)
+        y_test_np = y.to_numpy()
+        y_train_np = train_data[1].to_numpy()
+
+        score1 = self._validate_gini(y_test_np, y_pred_test)
+        score2 = self._validate_features_gini(X.select_dtypes(include="number"), y_test_np)
 
         if binner is not None:
             score3 = self._validate_binning(binner)
 
-        score4 = self._validate_target_rate(pred_prob, y_np)
-        score5 = self._validate_curve_test(pred_prob, y_np)
+        score4 = self._validate_target_rate(y_pred_test, y_test_np)
+        score5 = self._validate_curve_test(y_pred_test, y_test_np)
+        score6 = self._validate_gini_change(y_train_np, y_test_np, y_pred_train, y_pred_test)

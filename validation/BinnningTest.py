@@ -23,15 +23,17 @@ class BinningTest:
 
         ax.set_xticklabels(filtered_data["Bin"],
                            rotation=45,
-                           ha='right')
+                           size=7,
+                           ha='right'
+                          )
 
         ax2 = ax.twinx()
         line = sns.lineplot(x=np.arange(len(filtered_data)),
                             y=filtered_data["Event rate"],
                             color='black',
                             marker='o',
-                            markersize=8,
-                            linewidth=2.5,
+                            markersize=7,
+                            linewidth=0.5,
                             ax=ax2)
 
         ax.set_xlabel("Bin")

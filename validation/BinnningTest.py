@@ -78,6 +78,7 @@ class BinningTest:
         str,
         dict[str, np.ndarray]
     ]:
+        figsize = tuple(int(el * 1.5) for el in figsize)
         num_columns = []
         for el in binners:
             if binners[el].dtype == "numerical":

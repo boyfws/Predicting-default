@@ -23,8 +23,7 @@ class BinningTest:
 
         ax.set_xticklabels(filtered_data["Bin"],
                            rotation=45,
-                           ha='right',
-                           fontsize=10)
+                           ha='right')
 
         ax2 = ax.twinx()
         line = sns.lineplot(x=np.arange(len(filtered_data)),
@@ -35,9 +34,9 @@ class BinningTest:
                             linewidth=2.5,
                             ax=ax2)
 
-        ax.set_xlabel("Bin", fontsize=12, labelpad=15)
-        ax.set_ylabel("Count (%)", fontsize=12, color='magenta')
-        ax2.set_ylabel("Event Rate", fontsize=12, color='black')
+        ax.set_xlabel("Bin")
+        ax.set_ylabel("Count (%)", color='magenta')
+        ax2.set_ylabel("Event Rate", color='black')
 
         ax.tick_params(axis='y', colors='magenta')
         ax2.tick_params(axis='y', colors='black')
@@ -54,7 +53,7 @@ class BinningTest:
             binners: dict[str, OptimalBinning],
             figsize: tuple[int, int],
     ):
-        grid_w = 4
+        grid_w = 3
         grid_h = len(num_columns) // grid_w + int((len(num_columns) % grid_w) != 0)
         fig, axs = plt.subplots(grid_h, grid_w, figsize=figsize)
 
@@ -62,8 +61,8 @@ class BinningTest:
             for j in range(grid_w):
                 if 4 * i + j >= len(num_columns):
                     break
-                axs[i, j].set_title(num_columns[4 * i + j])
-                BinningTest.plot_graph_per_feature(binners[num_columns[4 * i + j]], axs[i, j])
+                axs[i, j].set_title(num_columns[grid_w * i + j])
+                BinningTest.plot_graph_per_feature(binners[num_columns[grid_w * i + j]], axs[i, j])
 
         plt.tight_layout()
         plt.show()

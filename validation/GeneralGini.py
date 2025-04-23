@@ -41,6 +41,7 @@ class GeneralGini:
         plt.plot(x, x, label="Random model")
         plt.fill_between(x, y, x, color='gray', alpha=0.3)
         plt.legend()
+        plt.show()
 
     def __call__(self,
                  y_true: np.ndarray,

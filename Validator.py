@@ -21,6 +21,7 @@ class Validator:
         self.general_gini = GeneralGini()
         self.feature_gini = FeatureGini()
         self.binner_test = BinningTest()
+        self.target_rate_test = TargetRateTest()
 
         self.plot_graphs = plot_graphs
         self.external_tests = external_tests
@@ -81,13 +82,27 @@ class Validator:
         title = "Feature Gini test"
         if (r / ryg_sum) > 0.2:
             score = -1
-            self.console.print(Panel(f"[red]❌ Test failed with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/red]", title=title))
+            self.console.print(
+                Panel(
+                    f"[red]❌ Test failed with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/red]",
+                    title=title)
+            )
         elif (y / ryg_sum) > 0.1:
             score = 0
-            self.console.print(Panel(f"[yellow]⚠️ Intermediate result with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/yellow]", title=title))
+            self.console.print(
+                Panel(
+                    f"[yellow]⚠️ Intermediate result with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/yellow]",
+                    title=title
+                )
+            )
         else:
             score = 1
-            self.console.print(Panel(f"[green]✅ Test passed with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/green]", title=title))
+            self.console.print(
+                Panel(
+                    f"[green]✅ Test passed with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/green]",
+                    title=title
+                )
+            )
 
         return score
 
@@ -109,7 +124,7 @@ class Validator:
             if ev_rate.shape[0] == 1:
                 continue
             elif ev_rate.shape[0] == 2:
-                g += 2
+                g += 1
                 continue
 
             ev_rate_diff = np.abs(np.diff(ev_rate))
@@ -132,18 +147,65 @@ class Validator:
         title = "Binning test"
         if (r / ryg_sum) > 0.2:
             score = -1
-            self.console.print(Panel(f"[red]❌ Test failed with red share {(r / ryg_sum):.2f}[/red]", title=title))
+            self.console.print(
+                Panel(
+                    f"[red]❌ Test failed with red share {(r / ryg_sum):.2f}[/red]",
+                    title=title
+                )
+            )
 
         elif (y / ryg_sum) > 0.1:
             score = 0
             self.console.print(
-                Panel(f"[yellow]⚠️ Intermediate result with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/yellow]", title=title)
+                Panel(
+                    f"[yellow]⚠️ Intermediate result with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/yellow]",
+                    title=title
+                )
             )
         else:
             score = 1
             self.console.print(Panel(f"[green]✅ Test passed with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/green]", title=title))
 
         return score
+
+    def _validate_target_rate(
+            self,
+            pred_p: np.ndarray,
+            y_true: np.ndarray
+    ):
+        results = self.target_rate_test(
+            pred_p,
+            y_true,
+            plot=self.plot_graphs,
+            figsize=self.figsize
+        )
+
+        coef = np.abs(results["actual_event_rate"] - results["mean_predicted_probability"]) / results["actual_event_rate"]
+
+        title = "Target Rate test"
+        if coef > 0.2:
+            score = -1
+            self.console.print(
+                Panel(
+                    f"[red]❌ Test failed with share {(coef * 100):.2f}%[/red]",
+                    title=title
+                )
+            )
+
+        elif coef > 0.1:
+            score = 0
+            self.console.print(
+                Panel(
+                    f"[yellow]⚠️ Intermediate result with share {(coef * 100):.2f}%[/yellow]",
+                    title=title
+                )
+            )
+        else:
+            score = 1
+            self.console.print(Panel(f"[green]✅ Test passed with share {(coef * 100):.2f}%[/green]", title=title))
+
+        return score
+
 
     def validate(
             self,
@@ -160,3 +222,4 @@ class Validator:
         score1 = self._validate_gini(y_np, pred_prob)
         score2 = self._validate_features_gini(X.select_dtypes(include="number"), y_np)
         score3 = self._validate_binning(binner)
+        score4 = self._validate_target_rate(pred_prob, y_np)

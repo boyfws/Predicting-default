@@ -158,5 +158,5 @@ class Validator:
         y_np = y.to_numpy()
 
         score1 = self._validate_gini(y_np, pred_prob)
-        score2 = self._validate_features_gini(X.select_dtype(include="number"), y_np)
+        score2 = self._validate_features_gini(X.select_dtypes(include="number"), y_np)
         score3 = self._validate_binning(binner)

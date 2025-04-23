@@ -36,6 +36,7 @@ class FeatureGini:
                     x=sorted_coefs,
                     y=sorted_names
                     )
+        plt.show()
 
     def __call__(self,
                  X: pd.DataFrame,

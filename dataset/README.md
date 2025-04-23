@@ -1,299 +1,56 @@
-# Используемый dataset 
+# Intro 
+
+The original dataset can be found [here](https://www.kaggle.com/datasets/adarshsng/lending-club-loan-data-csv).  
+This dataset was modified; [here](https://www.kaggle.com/code/db0boy/lending-club-loan-data-cleared-preparation) is a Kaggle kernel with the preprocessing code (the notebook is identical to the one in this directory).  
+The final cleaned dataset is available [here](https://www.kaggle.com/datasets/db0boy/lending-club-loan-data-cleared).  
+
+
+# Features 
+
+
+1. **funded_amnt** - The total amount committed to that loan at that point in time  
+2. **interest_rate** - Interest Rate on the loan  
+3. **monthly_payment** - The monthly payment owed by the borrower if the loan originates  
+4. **grade** - grade from C1 to A5, from worse to best respectively  
+5. **emp_title** - The job title supplied by the Borrower when applying for the loan  
+6. **emp_length** - Employment length in years  
+7. **home_ownership_status** - The home ownership status provided by the borrower during registration  
+8. **annual_income** - The self-reported annual income provided by the borrower during registration  
+9. **verification_status** - Indicates if income was verified by LC, not verified, or if the income source was verified  
+10. **loan_purpose** - A category provided by the borrower for the loan request  
+11. **addr_state** - The state provided by the borrower in the loan application  
+12. **dept_paym_income_ratio** - A ratio calculated using the borrower’s total monthly debt payments on the total debt obligations, excluding mortgage and the requested LC loan, divided by the borrower’s self-reported monthly income  
+13. **num_30+_delinq_in_2yrs** - The number of 30+ days past-due incidences of delinquency  
+14. **num_inq_in_6mths** - The number of inquiries in past 6 months (excluding auto and mortgage inquiries)  
+15. **mths_since_last_delinq** - The number of months since the borrower's last delinquency  
+16. **num_open_credit_lines** - The number of open credit lines in the borrower's credit file  
+17. **num_derogatory_pub_rec** - Number of derogatory public records  
+18. **total_credit_revolving_bal** - Total credit revolving balance  
+19. **used_credit_share** - Revolving line utilization rate, or the amount of credit the borrower is using relative to all assets  
+20. **tot_num_credit_lines** - The total number of credit lines currently in the borrower's credit file  
+21. **initial_list_status** - The initial listing status of the loan  
+22. **remaining_princ_for_tot_amnt_fund** - Remaining outstanding principal for total amount funded  
+23. **paym_rec_for_tot_amnt_fund** - Payments received to date for total amount funded  
+24. **princ_rec** - Principal received to date  
+25. **interest_rec** - Interest received to date  
+26. **late_fees_rec** - Late fees received to date  
+27. **num_open_trades_in_6mths** - Number of open trades in last 6 months  
+28. **num_installment_acc_op_in_12mths** - Number of installment accounts opened in past 12 months  
+29. **num_installment_acc_op_in_24mths** - Number of installment accounts opened in past 24 months  
+30. **mths_since_last_installment_acc_op** - Months since most recent installment accounts opened  
+31. **num_rev_trades_op_in_12mths** - Number of revolving trades opened in past 12 months  
+32. **num_rev_trades_op_in_24mths** - Number of revolving trades opened in past 24 months  
+33. **max_bal_owed** - Maximum current balance owed on all revolving accounts  
+34. **bal_to_cred_lim** - Balance to credit limit on all trades  
+35. **num_inq** - Number of personal finance inquiries  
+36. **num_inq_in_12mths** - Number of credit inquiries in past 12 months  
+37. **mths_since_recent_bankcard_delinq** - Months since most recent bankcard delinquency  
+38. **mths_since_recent_revol_delinq** - Months since most recent revolving delinquency  
+39. **disbursement_method** - The method by which the borrower receives their loan  
+40. **loan_term_months** - Loan duration in months  
+41. **issue_date_month** - The month which the loan was funded  
+42. **issue_date_year** - The year which the loan was funded  
+43. **region_code** - Region code, ranging from “0” in the Northeast (e.g. Massachusetts, Connecticut) to “9” in the West (e.g. California, Alaska)  
+44. **earliest_cr_line_month** - The month the borrower's earliest reported credit line was opened  
+45. **earliest_cr_line_year** - The year the borrower's earliest reported credit line was opened  
 
-В рамках проекта я использую dataset из Kaggle: https://www.kaggle.com/datasets/adarshsng/lending-club-loan-data-csv
-
-# Фичи в dataset
-
-acceptD: Дата, когда заемщик принял предложение.
-
-accNowDelinq: Количество счетов, по которым заемщик в настоящее время просрочил платежи.
-
-accOpenPast24Mths: Количество открытых кредитных линий за последние 24 месяца.
-
-- addrState: Штат, указанный заемщиком в заявке на кредит.
-
-  _Категориальная переменная_
-
-all_util: Соотношение текущего баланса к кредитному лимиту по всем кредитным линиям.
-
-annual_inc_joint: Совокупный годовой доход, указанный созаемщиками при регистрации.
-
-- annualInc: Годовой доход, указанный заемщиком при регистрации.
-  _Непрерывная переменная_
-
-
-application_type: Тип заявки: индивидуальная или совместная с двумя созаемщиками.
-
-avg_cur_bal: Средний текущий баланс по всем счетам.
-
-bcOpenToBuy: Общий доступный кредитный лимит по банковским картам.
-
-bcUtil: Соотношение текущего баланса к кредитному лимиту по всем банковским картам.
-
-chargeoff_within_12_mths: Количество списаний долга за последние 12 месяцев.
-
-collections_12_mths_ex_med: Количество взысканий за последние 12 месяцев, исключая медицинские.
-
-creditPullD: Дата, когда Lending Club запросил кредитный отчет заемщика.
-
-- delinq2Yrs: Количество случаев просрочки платежей более 30 дней за последние 2 года.
-  
-  _Дискретная переменная_
-
-delinqAmnt: Сумма просроченных платежей по счетам, по которым заемщик в настоящее время просрочил платежи.
-
-- desc: Описание кредита, предоставленное заемщиком.
- 
-  _Непрерывная переменная_
-
-
-- dti: Отношение ежемесячных долговых обязательств заемщика (исключая ипотеку и запрашиваемый кредит) к его ежемесячному доходу.
-  
-  _Deleted_
-
-dti_joint: Отношение ежемесячных долговых обязательств созаемщиков (исключая ипотеку и запрашиваемый кредит) к их совокупному ежемесячному доходу.
-
-- earliestCrLine: Дата открытия самой ранней кредитной линии заемщика.
-
-  _Deleted_
-
-  _Разложена на месяц и год_
-
-effective_int_rate: Эффективная процентная ставка, учитывающая влияние неполученных процентов до списания долга.
-
-emp_title: Должность заемщика, указанная при подаче заявки на кредит.
-
-- empLength: Стаж работы в годах. Значения от 0 до 10, где 0 означает менее года, а 10 — 10 и более лет.
-  
-  _Категориальная переменная_
-
-expD: Дата истечения срока действия заявки.
-
-expDefaultRate: Ожидаемая вероятность дефолта по кредиту.
-
-ficoRangeHigh: Верхняя граница диапазона кредитного рейтинга FICO заемщика на момент выдачи кредита.
-
-ficoRangeLow: Нижняя граница диапазона кредитного рейтинга FICO заемщика на момент выдачи кредита.
-
-- fundedAmnt: Общая сумма, выделенная на кредит на данный момент.
-
-    _Непрерывная переменная_ 
-
-- grade: Кредитный рейтинг, присвоенный Lending Club.
-
-  _Категориальная переменная_
-
-  _Deleted_
-
-- homeOwnership: Статус владения жильем, указанный заемщиком. Возможные значения: аренда, собственность, ипотека, другое.
-  
-  _Категориальная переменная_
-
-- id: Уникальный идентификатор заявки на кредит, присвоенный Lending Club.
-
-    _Deleted_
-
-il_util: Соотношение текущего баланса к кредитному лимиту по всем кредитным линиям.
-
-ils_exp_d: Дата истечения срока действия платформы wholeloan.
-
-initialListStatus: Начальный статус заявки на кредит. Возможные значения: W, F.
-
-inq_fi: Количество запросов на персональный кредит.
-
-inq_last_12m: Количество кредитных запросов за последние 12 месяцев.
-
-- inqLast6Mths: Количество кредитных запросов за последние 6 месяцев (исключая автокредиты и ипотеку).
-
-  _Дискретная переменная_
-
-- installment: Ежемесячный платеж, который должен будет выплачивать заемщик, если кредит будет одобрен.
-
-  _Непрерывная переменная_
-
-- intRate: Процентная ставка по кредиту.
-
-  _Непрерывная переменная_ 
-
-isIncV: Указывает, был ли доход заемщика проверен Lending Club, не проверен или источник дохода был подтвержден.
-
-listD: Дата, когда заявка заемщика была размещена на платформе.
-
-- loanAmnt: Запрашиваемая сумма кредита. Если кредитный отдел уменьшит сумму, это будет отражено здесь.
-
-    _Непрерывная переменная_
-
-    _Deleted_
-
-max_bal_bc: Максимальный текущий баланс по всем кредитным картам.
-
-- memberId: Уникальный идентификатор заемщика, присвоенный Lending Club.
-
-    _Deleted_    
-
-mo_sin_old_rev_tl_op: Количество месяцев с момента открытия самой старой кредитной линии.
-
-mo_sin_rcnt_rev_tl_op: Количество месяцев с момента открытия последней кредитной линии.
-
-mo_sin_rcnt_tl: Количество месяцев с момента открытия последнего счета.
-
-mortAcc: Количество ипотечных счетов.
-
-msa: Метрополитенский статистический ареал заемщика.
-
-mths_since_last_major_derog: Количество месяцев с момента последнего серьезного нарушения (90+ дней просрочки).
-
-mths_since_oldest_il_open: Количество месяцев с момента открытия самого старого кредита.
-
-mths_since_rcnt_il: Количество месяцев с момента открытия последнего кредита.
-
-- mthsSinceLastDelinq: Количество месяцев с момента последней просрочки.
-
-  _Дискретная переменная_
-
-mthsSinceLastRecord: Количество месяцев с момента последней записи в публичных реестрах.
-
-mthsSinceMostRecentInq: Количество месяцев с момента последнего кредитного запроса.
-
-mthsSinceRecentBc: Количество месяцев с момента открытия последней кредитной карты.
-
-mthsSinceRecentLoanDelinq: Количество месяцев с момента последней просрочки по кредиту.
-
-mthsSinceRecentRevolDelinq: Количество месяцев с момента последней просрочки по кредитной линии.
-
-num_accts_ever_120_pd: Количество счетов, когда-либо просроченных на 120 и более дней.
-
-num_actv_bc_tl: Количество активных кредитных карт.
-
-num_actv_rev_tl: Количество активных кредитных линий.
-
-num_bc_sats: Количество кредитных карт с положительной историей.
-
-num_bc_tl: Количество кредитных карт.
-
-num_il_tl: Количество кредитов.
-
-num_op_rev_tl: Количество открытых кредитных линий.
-
-num_rev_accts: Количество кредитных линий.
-
-num_rev_tl_bal_gt_0: Количество кредитных линий с балансом больше 0.
-
-num_sats: Количество счетов с положительной историей.
-
-num_tl_120dpd_2m: Количество счетов, просроченных на 120 дней (обновлено за последние 2 месяца).
-
-num_tl_30dpd: Количество счетов, просроченных на 30 дней (обновлено за последние 2 месяца).
-
-num_tl_90g_dpd_24m: Количество счетов, просроченных на 90 и более дней за последние 24 месяца.
-
-num_tl_op_past_12m: Количество счетов, открытых за последние 12 месяцев.
-
-open_acc_6m: Количество открытых счетов за последние 6 месяцев.
-
-open_il_12m: Количество кредитов, открытых за последние 12 месяцев.
-
-open_il_24m: Количество кредитов, открытых за последние 24 месяцев.
-
-open_act_il: Количество активных кредитов.
-
-open_rv_12m: Количество открытых кредитных линий за последние 12 месяцев.
-
-open_rv_24m: Количество открытых кредитных линий за последние 24 месяцев.
-
-openAcc: Количество открытых кредитных линий в кредитной истории заемщика.
-
-pct_tl_nvr_dlq: Процент кредитных линий, по которым никогда не было просрочек.
-
-percentBcGt75: Процент кредитных карт, использование которых превышает 75% лимита.
-
-pub_rec_bankruptcies: Количество банкротств в публичных реестрах.
-
-pubRec: Количество негативных записей в публичных реестрах.
-
-- purpose: Категория, указанная заемщиком для цели кредита.
-  _Категориальная переменная_
-
-reviewStatus: Статус заявки на кредит. Возможные значения: одобрено, не одобрено.
-
-reviewStatusD: Дата рассмотрения заявки на кредит Lending Club.
-
-revolBal: Общий баланс по кредитным линиям.
-
-revolUtil: Уровень использования кредитных линий (отношение текущего баланса к доступному кредитному лимиту).
-
-serviceFeeRate: Комиссия, уплачиваемая инвестором за этот кредит.
-
-- subGrade: Дополнительный кредитный рейтинг, присвоенный Lending Club.
-
-  _Категориальная переменная_
-
-tax_liens: Количество налоговых залогов.
-
-- term: Срок кредита в месяцах (36 или 60).
-
-    _Преобразована в непрерывную переменную_
-
-- title: Название кредита, указанное заемщиком.
-
-  _Deleted_
-
-tot_coll_amt: Общая сумма взысканий.
-
-tot_cur_bal: Общий текущий баланс по всем счетам.
-
-tot_hi_cred_lim: Общий кредитный лимит.
-
-total_bal_il: Общий текущий баланс по всем кредитам.
-
-total_cu_tl: Количество финансовых счетов.
-
-total_il_high_credit_limit: Общий кредитный лимит по всем кредитам.
-
-total_rev_hi_lim: Общий кредитный лимит по кредитным линиям.
-
-totalAcc: Общее количество кредитных линий в кредитной истории заемщика.
-
-totalBalExMort: Общий кредитный баланс, исключая ипотеку.
-
-totalBcLimit: Общий кредитный лимит по кредитным картам.
-
-- url: Ссылка на страницу с данными о кредите на платформе Lending Club.
-  
-  _Deleted_
-
-verified_status_joint: Указывает, был ли совместный доход созаемщиков проверен Lending Club, не проверен или источник дохода был подтвержден.
-
-- zip_code: Первые три цифры почтового индекса, указанного заемщиком. 
-    
-  _Deleted_
-  
-  Используем только первую цифру
-
-revol_bal_joint: Совокупный баланс по кредитным линиям созаемщиков, за вычетом дублирующих балансов.
-
-sec_app_fico_range_low: Нижняя граница диапазона кредитного рейтинга FICO для второго заявителя.
-
-sec_app_fico_range_high: Верхняя граница диапазона кредитного рейтинга FICO для второго заявителя.
-
-sec_app_earliest_cr_line: Дата открытия самой ранней кредитной линии для второго заявителя.
-
-sec_app_inq_last_6mths: Количество кредитных запросов за последние 6 месяцев для второго заявителя.
-
-sec_app_mort_acc: Количество ипотечных счетов для второго заявителя.
-
-sec_app_open_acc: Количество открытых счетов для второго заявителя.
-
-sec_app_revol_util: Уровень использования кредитных линий для второго заявителя.
-
-sec_app_open_act_il: Количество активных кредитов для второго заявителя.
-
-sec_app_num_rev_accts: Количество кредитных линий для второго заявителя.
-
-sec_app_chargeoff_within_12_mths: Количество списаний долга за последние 12 месяцев для второго заявителя.
-
-sec_app_collections_12_mths_ex_med: Количество взысканий за последние 12 месяцев (исключая медицинские) для второго заявителя.
-
-sec_app_mths_since_last_major_derog: Количество месяцев с момента последнего серьезного нарушения (90+ дней просрочки) для второго заявителя.
-
-disbursement_method: Способ выдачи кредита. Возможные значения: CASH, DIRECT_PAY

@@ -32,10 +32,10 @@ class GiniChangeTest(GeneralGini):
     ) -> tuple[float, float]:
 
         CAP_train = self.CAP_curve(y_train, y_pred_train)
-        gini_train = self.gini(*CAP_train[::-1])
+        gini_train = self.gini_value(*CAP_train[::-1])
 
         CAP_test = self.CAP_curve(y_test, y_pred_test)
-        gini_test = self.gini(*CAP_test[::-1])
+        gini_test = self.gini_value(*CAP_test[::-1])
 
         abs_change = (gini_train - gini_test) * 100
         rel_change = 100 * (gini_train - gini_test) / gini_train

@@ -57,12 +57,12 @@ class BinningTest:
         grid_h = len(num_columns) // grid_w
         if grid_h * grid_w < len(num_columns):
             grid_h += 1
-            
+
         fig, axs = plt.subplots(grid_h, grid_w, figsize=figsize)
 
         for i in range(grid_h):
             for j in range(grid_w):
-                if 4 * i + j >= len(num_columns):
+                if grid_w * i + j >= len(num_columns):
                     break
                 axs[i, j].set_title(num_columns[grid_w * i + j])
                 BinningTest.plot_graph_per_feature(binners[num_columns[grid_w * i + j]], axs[i, j])

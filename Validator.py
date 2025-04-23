@@ -8,6 +8,8 @@ import numpy as np
 from rich.console import Console
 from rich.panel import Panel
 
+from typing import Optional
+
 
 class Validator:
     console: Console
@@ -22,6 +24,7 @@ class Validator:
         self.feature_gini = FeatureGini()
         self.binner_test = BinningTest()
         self.target_rate_test = TargetRateTest()
+        self.calibration_curve_test = CalibrationCurveTest()
 
         self.plot_graphs = plot_graphs
         self.external_tests = external_tests
@@ -206,20 +209,75 @@ class Validator:
 
         return score
 
+    def _validate_curve_test(self,
+                             pred_p: np.ndarray,
+                             y_true: np.ndarray
+                            ):
+
+        result_df = self.calibration_curve_test(
+            pred_p,
+            y_true,
+            n_buckets=10,
+            plot=self.plot_graphs,
+            figsize=self.figsize,
+            strategy="uniform",
+        )
+
+        fact = result_df["actual_rate"].to_numpy()
+        pred = result_df["mean_prob"].to_numpy()
+
+        coef = np.abs(fact - pred) / fact
+        share = np.mean(coef > 0.2)
+
+        title = "Calibration Curve test"
+        if share > 0.3:
+            score = -1
+            self.console.print(
+                Panel(
+                    f"[red]❌ Test failed[/red]",
+                    title=title
+                )
+            )
+
+        elif share > 0.15:
+            score = 0
+            self.console.print(
+                Panel(
+                    f"[yellow]⚠️ Intermediate result[/yellow]",
+                    title=title
+                )
+            )
+        else:
+            score = 1
+            self.console.print(
+                Panel(
+                    f"[green]✅ Test passed[/green]",
+                    title=title
+                )
+            )
+
+        return score
 
     def validate(
             self,
             X: pd.DataFrame,
             y: pd.Series,
-            binner: Binner,
-            model: Model
+            model: Model,
+            binner: Optional[Binner] = None,
     ):
-        X_transformed: pd.DataFrame = binner.transform(X)
+        if binner is None:
+            pred_prob = model.predict_proba(X)
+        else:
+            X_transformed: pd.DataFrame = binner.transform(X)
+            pred_prob = model.predict_proba(X_transformed)
 
-        pred_prob: np.ndarray = model.predict_proba(X_transformed)
         y_np = y.to_numpy()
 
         score1 = self._validate_gini(y_np, pred_prob)
         score2 = self._validate_features_gini(X.select_dtypes(include="number"), y_np)
-        score3 = self._validate_binning(binner)
+
+        if binner is not None:
+            score3 = self._validate_binning(binner)
+
         score4 = self._validate_target_rate(pred_prob, y_np)
+        score5 = self._validate_curve_test(pred_prob, y_np)

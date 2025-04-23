@@ -53,7 +53,7 @@ class BinningTest:
             binners: dict[str, OptimalBinning],
             figsize: tuple[int, int],
     ):
-        grid_w = 3
+        grid_w = 4
         grid_h = len(num_columns) // grid_w
         if grid_h * grid_w < len(num_columns):
             grid_h += 1

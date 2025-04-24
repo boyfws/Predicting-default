@@ -28,7 +28,7 @@ class FeatureGiniChangeTest(FeatureGini):
         plt.xlabel("Features")
         plt.ylabel("Gini coefficient")
         #plt.title(title)
-        plt.xticks(x, keys, rotation=45)
+        plt.xticks(x, keys, rotation=70)
         plt.legend()
         plt.tight_layout()
         plt.show()

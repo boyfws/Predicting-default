@@ -371,7 +371,7 @@ class Validator:
             X: pd.DataFrame,
             y: pd.Series,
             model: Model,
-            train_data: tuple[np.ndarray, np.ndarray],
+            train_data: tuple[pd.DataFrame, pd.Series],
             binner: Optional[Binner] = None,
     ):
         if binner is None:
@@ -398,7 +398,7 @@ class Validator:
         score6 = self._validate_gini_change(y_train_np, y_test_np, y_pred_train, y_pred_test)
         score7 = self._validate_features_gini_change_test(
             train_data[0],
-            train_data[1],
+            y_train_np,
             X,
-            y
+            y_test_np,
         )

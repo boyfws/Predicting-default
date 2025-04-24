@@ -4,3 +4,4 @@ from .BinnningTest import BinningTest
 from .TargetRateTest import TargetRateTest
 from .CalibrationCurveTest import CalibrationCurveTest
 from .GiniChangeTest import GiniChangeTest
+from .FeatureGiniChangeTest import FeatureGiniChangeTest

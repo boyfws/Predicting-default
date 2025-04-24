@@ -25,6 +25,7 @@ class Validator:
         self.target_rate_test = TargetRateTest()
         self.calibration_curve_test = CalibrationCurveTest()
         self.gini_change_test = GiniChangeTest()
+        self.feature_gini_change_test = FeatureGiniChangeTest()
 
         self.plot_graphs = plot_graphs
 
@@ -257,7 +258,6 @@ class Validator:
 
         return score
 
-
     def _validate_gini_change(self,
                               y_train: np.ndarray,
                               y_test: np.ndarray,
@@ -278,7 +278,7 @@ class Validator:
             score = -1
             self.console.print(
                 Panel(
-                    f"[red]❌ Test failed with absolute and relative diffs: {-abs_diff:.2f} p.p, {-rel_diff:.2f}%[/red]",
+                    f"[red]❌ Test failed with absolute and relative diffs: {-abs_diff:.2f} p.p and {-rel_diff:.2f}%[/red]",
                     title=title
                 )
             )
@@ -287,7 +287,7 @@ class Validator:
             score = 0
             self.console.print(
                 Panel(
-                    f"[yellow]⚠️ Intermediate result with absolute and relative diffs: {-abs_diff:.2f} p.p, {-rel_diff:.2f}%[/yellow]",
+                    f"[yellow]⚠️ Intermediate result with absolute and relative diffs: {-abs_diff:.2f} p.p and {-rel_diff:.2f}%[/yellow]",
                     title=title
                 )
             )
@@ -295,7 +295,71 @@ class Validator:
             score = 1
             self.console.print(
                 Panel(
-                    f"[green]✅ Test passed with absolute and relative diffs: {-abs_diff:.2f} p.p, {-rel_diff:.2f}%[/green]",
+                    f"[green]✅ Test passed with absolute and relative diffs: {-abs_diff:.2f} p.p and {-rel_diff:.2f}%[/green]",
+                    title=title
+                )
+            )
+
+        return score
+
+    def _validate_features_gini_change_test(
+            self,
+            X_train: pd.DataFrame,
+            y_train: np.ndarray,
+            X_test: pd.DataFrame,
+            y_test: np.ndarray,
+    ) -> int:
+        result_train, result_test = self.feature_gini_change_test(
+            X_train,
+            y_train,
+            X_test,
+            y_test,
+            plot=self.plot_graphs,
+            figsize=self.figsize,
+        )
+        keys = list(result_train.keys())
+        train_gini = np.array([result_train[el] for el in keys])
+        test_gini = np.array([result_test[el] for el in keys])
+
+        abs_diff = (train_gini - test_gini) * 100
+        rel_diff = 100 * (train_gini - test_gini) / train_gini
+
+        scores = np.empty(len(keys), dtype=int)
+
+        mask1 = (abs_diff > 5) * (rel_diff > 20)
+        mask2 = (abs_diff > 3) * (rel_diff > 15)
+
+        scores[mask1] = -1
+        scores[mask2] = 0
+        scores[~(mask1 + mask2)] = 1
+
+        r_share = (scores == -1).mean()
+        y_share = (scores == 0).mean()
+        g_share = 1 - r_share - y_share
+
+        title = "Features Gini Change test"
+        if r_share > 0.0:
+            score = -1
+            self.console.print(
+                Panel(
+                    f"[red]❌ Test failed with {r_share:.2f} , {y_share:.2f} , {g_share:.2f} shares for red, yellow, green scores[/red]",
+                    title=title
+                )
+            )
+
+        elif y_share > 0.1:
+            score = 0
+            self.console.print(
+                Panel(
+                    f"[yellow]⚠️ Intermediate result with {r_share:.2f} , {y_share:.2f} , {g_share:.2f} shares for red, yellow, green scores[/yellow]",
+                    title=title
+                )
+            )
+        else:
+            score = 1
+            self.console.print(
+                Panel(
+                    f"[green]✅ Test passed with {r_share:.2f} , {y_share:.2f} , {g_share:.2f} shares for red, yellow, green scores[/green]",
                     title=title
                 )
             )
@@ -332,3 +396,9 @@ class Validator:
         score4 = self._validate_target_rate(y_pred_test, y_test_np)
         score5 = self._validate_curve_test(y_pred_test, y_test_np)
         score6 = self._validate_gini_change(y_train_np, y_test_np, y_pred_train, y_pred_test)
+        score7 = self._validate_features_gini_change_test(
+            train_data[0],
+            train_data[1],
+            X,
+            y
+        )

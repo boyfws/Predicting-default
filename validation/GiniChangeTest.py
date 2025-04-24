@@ -15,7 +15,7 @@ class GiniChangeTest(GeneralGini):
         plt.figure(figsize=figsize)
         ax = sns.barplot(
             x=["Train", "Test"],
-            y=[gini_train, gini_test],
+            y=[round(gini_train * 100, 2), round(gini_test * 100, 2)],
         )
         ax.bar_label(ax.containers[0], fontsize=10);
 

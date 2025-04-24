@@ -366,6 +366,24 @@ class Validator:
 
         return score
 
+    def _final_validation(self, scores: list[int]) -> None:
+        title = "[bold]Final result[/bold]"
+        if -1 in scores or scores.count(0) > 3:
+            self.console.print(
+                Panel(
+                    f"[red]❌ Validation failed[/red]",
+                    title=title
+                )
+            )
+
+        else:
+            self.console.print(
+                Panel(
+                    f"[green]✅ Validation passed[/green]",
+                    title=title
+                )
+            )
+
     def validate(
             self,
             X: pd.DataFrame,
@@ -373,7 +391,7 @@ class Validator:
             model: Model,
             train_data: tuple[pd.DataFrame, pd.Series],
             binner: Optional[Binner] = None,
-    ):
+    ) -> None:
         if binner is None:
             y_pred_test = model.predict_proba(X)
             y_pred_train = model.predict_proba(train_data[0])
@@ -387,18 +405,31 @@ class Validator:
         y_test_np = y.to_numpy()
         y_train_np = train_data[1].to_numpy()
 
+        scores = []
+
         score1 = self._validate_gini(y_test_np, y_pred_test)
+        scores.append(score1)
         score2 = self._validate_features_gini(X.select_dtypes(include="number"), y_test_np)
+        scores.append(score2)
 
         if binner is not None:
             score3 = self._validate_binning(binner)
+            scores.append(score3)
 
         score4 = self._validate_target_rate(y_pred_test, y_test_np)
+        scores.append(score4)
         score5 = self._validate_curve_test(y_pred_test, y_test_np)
+        scores.append(score5)
         score6 = self._validate_gini_change(y_train_np, y_test_np, y_pred_train, y_pred_test)
+        scores.append(score6)
         score7 = self._validate_features_gini_change_test(
             train_data[0],
             y_train_np,
             X,
             y_test_np,
         )
+        scores.append(score7)
+
+        self._final_validation(scores)
+
+

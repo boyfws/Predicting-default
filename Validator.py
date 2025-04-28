@@ -1,6 +1,6 @@
 from validation import *
 from binning import Binner
-from interfaces import Model
+from utils import Model
 
 import pandas as pd
 import numpy as np

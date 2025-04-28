@@ -6,3 +6,4 @@ optbinning
 scikit-learn
 rich
 scipy
+joblib

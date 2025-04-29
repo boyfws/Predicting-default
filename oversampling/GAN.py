@@ -1,6 +1,7 @@
 import sys
 
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 import torch
 import torch.nn as nn
@@ -239,9 +240,21 @@ class OversampleGAN:
             raise RuntimeError("Model is not fitted")
         torch.save(self.G.state_dict(), filepath)
 
-
     def load_generator(
             self,
             filepath: str
     ) -> "OversampleGAN":
         pass
+
+    def plot_fit(self, figsize: tuple[int, int] = (10, 10)) -> None:
+        mean_losses = self.losses.mean(axis=1)
+        epochs = np.arange(1, mean_losses.shape[0] + 1)
+
+        plt.figure(figsize=figsize)
+        plt.plot(epochs, mean_losses[:, 0], label="D_loss")
+        plt.plot(epochs, mean_losses[:, 1], label="G_loss")
+        plt.xlabel("Epoch")
+        plt.ylabel("Mean Loss")
+        plt.legend()
+        plt.tight_layout()
+        plt.show()

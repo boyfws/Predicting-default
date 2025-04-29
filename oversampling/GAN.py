@@ -162,10 +162,22 @@ class OversampleGAN:
 
         return loss_G.item()
 
-    def fit(self, df: pd.DataFrame) -> "OversampleGAN":
+    def fit(self,
+            df: pd.DataFrame,
+            num_workers: int = 4,
+            prefetch_factor: int = 20
+        ) -> "OversampleGAN":
+        
         data = self.data_transformer.fit_transform(df).float()
         dataset = TensorDataset(data)
-        loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
+        loader = DataLoader(
+            dataset,
+            batch_size=self.batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            pin_memory=str(self.device).lower() == "cuda",
+            prefetch_factor=prefetch_factor
+        )
 
         input_dim = data.size(1)
         self._build_models(input_dim)

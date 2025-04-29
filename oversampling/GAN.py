@@ -184,7 +184,7 @@ class OversampleGAN:
                     position=0,
                     leave=True
             )
-            for i, real_batch in enumerate(pbar):
+            for i, (real_batch,) in enumerate(pbar):
                 real_batch = real_batch.to(self.device)
                 bs = real_batch.size(0)
 

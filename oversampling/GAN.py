@@ -58,6 +58,7 @@ class OversampleGAN:
         )
 
     def _build_models(self, input_dim: int):
+
         class Generator(nn.Module):
             def __init__(self, latent_dim, hidden_dims, output_dim):
                 super().__init__()
@@ -81,15 +82,17 @@ class OversampleGAN:
             def forward(self, z):
                 return self.net(z)
 
+        leaky_relu_coef = self.leaky_relu_coef
+
         class Discriminator(nn.Module):
             def __init__(self, input_dim, hidden_dims):
                 super().__init__()
                 self.net = nn.Sequential(
                     nn.utils.spectral_norm(nn.Linear(input_dim, hidden_dims[1]), n_power_iterations=1),
-                    nn.LeakyReLU(self.leaky_relu_coef, inplace=True),
+                    nn.LeakyReLU(leaky_relu_coef, inplace=True),
 
                     nn.utils.spectral_norm(nn.Linear(hidden_dims[1], hidden_dims[0]), n_power_iterations=1),
-                    nn.LeakyReLU(self.leaky_relu_coef, inplace=True),
+                    nn.LeakyReLU(leaky_relu_coef, inplace=True),
 
                     nn.utils.spectral_norm(nn.Linear(hidden_dims[0], 1), n_power_iterations=1),
                     nn.Sigmoid(),

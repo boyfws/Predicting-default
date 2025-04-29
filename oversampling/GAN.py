@@ -182,7 +182,6 @@ class OversampleGAN:
                     loader,
                     desc=f"Epoch {str(epoch + 1).rjust(len(str(self.epochs)))}/{self.epochs}",
                     file=sys.stdout,
-                    position=0,
                     leave=True
             )
             for i, (real_batch,) in enumerate(pbar):

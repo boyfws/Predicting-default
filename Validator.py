@@ -440,9 +440,9 @@ class Validator:
         score6 = self._validate_gini_change(y_train_np, y_test_np, y_pred_train, y_pred_test)
         scores.append(score6)
         score7 = self._validate_features_gini_change_test(
-            train_data[0],
+            train_data[0].select_dtypes(include="number"),
             y_train_np,
-            X,
+            X.select_dtypes(include="number"),
             y_test_np,
         )
         scores.append(score7)

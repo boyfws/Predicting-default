@@ -7,3 +7,5 @@ scikit-learn
 rich
 scipy
 joblib
+torch
+tqdm

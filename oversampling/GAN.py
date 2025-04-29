@@ -172,6 +172,10 @@ class OversampleGAN:
         self.G.train()
         self.D.train()
 
+        self.losses = np.zeros(
+            (self.epochs, len(loader), 2), dtype=np.float16
+        )
+
         for epoch in range(self.epochs):
             pbar = tqdm(
                     loader,
@@ -180,7 +184,7 @@ class OversampleGAN:
                     position=0,
                     leave=True
             )
-            for real_batch, in pbar:
+            for i, real_batch, in enumerate(pbar):
                 real_batch = real_batch.to(self.device)
                 bs = real_batch.size(0)
 
@@ -201,10 +205,19 @@ class OversampleGAN:
                         labels_real
                 )
 
-                pbar.set_postfix({
-                        "D_loss": f"{loss_D:.4f}",
-                        "G_loss": f"{loss_G:.4f}"
-                })
+                self.losses[epoch, i, 0] = loss_D
+                self.losses[epoch, i, 1] = loss_G
+
+                if i != len(loader) - 1:
+                    pbar.set_postfix({
+                            "D_loss": f"{loss_D:.4f}",
+                            "G_loss": f"{loss_G:.4f}"
+                    })
+                else:
+                    pbar.set_postfix({
+                            "D_loss": f"{np.mean(self.losses[epoch, :, 0]):.4f}",
+                            "G_loss": f"{np.mean(self.losses[epoch, :, 1]):.4f}"
+                    })
 
         self.G.eval()
         self.D.eval()
@@ -217,3 +230,18 @@ class OversampleGAN:
             z = torch.randn(num_samples, self.latent_dim, device=self.device)
             gen_tensor = self.G(z).cpu()
         return self.data_transformer.inverse_transform(gen_tensor)
+
+    def save_generator(
+            self,
+            filepath: str
+    ) -> None:
+        if not hasattr(self, 'G') or self.G is None:
+            raise RuntimeError("Model is not fitted")
+        torch.save(self.G.state_dict(), filepath)
+
+
+    def load_generator(
+            self,
+            filepath: str
+    ) -> "OversampleGAN":
+        pass

@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 
 from .FeatureGini import FeatureGini
 
+from joblib import Parallel, delayed
+
+
 
 class FeatureGiniChangeTest(FeatureGini):
     @staticmethod
@@ -42,21 +45,36 @@ class FeatureGiniChangeTest(FeatureGini):
             y_test: np.ndarray,
             plot: bool = False,
             figsize: tuple[int, int] = (10, 10),
+            n_jobs: int = -1,
     ):
         columns = X_train.columns
 
-        result_train = {}
-        result_test = {}
-        for el in columns:
-            result_train[el] = self.compute_gini_per_feature(
-                X_train[el].to_numpy(),
-                y_train,
-            )
+#        result_train = {}
+#        result_test = {}
+#        for el in columns:
+#            result_train[el] = self.compute_gini_per_feature(
+#                X_train[el].to_numpy(),
+#                y_train,
+#            )
 
-            result_test[el] = self.compute_gini_per_feature(
-                X_test[el].to_numpy(),
-                y_test,
-            )
+#            result_test[el] = self.compute_gini_per_feature(
+#                X_test[el].to_numpy(),
+#                y_test,
+#            )
+
+        train_results = Parallel(n_jobs=n_jobs)(
+            delayed(self.compute_gini_per_feature)(col, X_train[col].to_numpy(), y_train)
+            for col in columns
+        )
+
+        test_results = Parallel(n_jobs=n_jobs)(
+            delayed(self.compute_gini_per_feature)(col, X_test[col].to_numpy(), y_test)
+            for col in columns
+        )
+
+        result_train = {col: gini for col, gini in train_results}
+        result_test = {col: gini for col, gini in test_results}
+
 
         if plot:
             self.plot_ginis_change(

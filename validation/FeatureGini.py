@@ -3,20 +3,23 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+from joblib import Parallel, delayed
+
 
 class FeatureGini:
     @staticmethod
     def compute_gini_per_feature(
+            col: str,
             X_feat: np.ndarray,
             y_true: np.ndarray
-    ) -> float:
+    ) -> tuple[str, float]:
         sorted_idx = np.argsort(X_feat)
         sorted_y_true = y_true[sorted_idx]
 
         y = np.cumsum(sorted_y_true) / np.sum(y_true)
         x = np.arange(1, len(y) + 1) / len(y)
 
-        return np.abs(2 * np.trapz(y, x) - 1)
+        return col, np.abs(2 * np.trapz(y, x) - 1)
 
     @staticmethod
     def plot_ginis(
@@ -43,15 +46,23 @@ class FeatureGini:
                  y_true: np.ndarray,
                  plot: bool = False,
                  figsize: tuple[int, int] = (10, 10),
+                 n_jobs: int = -1
                  ):
         columns = X.columns
 
-        result = {}
-        for el in columns:
-            result[el] = self.compute_gini_per_feature(
-                X[el].to_numpy(),
-                y_true
-            )
+#        result = {}
+#        for el in columns:
+#            result[el] = self.compute_gini_per_feature(
+#                X[el].to_numpy(),
+#                y_true
+#            )
+
+        results = Parallel(n_jobs=n_jobs)(
+            delayed(self.compute_gini_per_feature)(col, X[col].to_numpy(), y_true)
+            for col in columns
+        )
+
+        result = {col: gini for col, gini in results}
 
         if plot:
             self.plot_ginis(result, figsize)

@@ -18,6 +18,7 @@ class Validator:
             self,
             plot_graphs: bool = True,
             figsize: tuple[int, int] = (10, 10),
+            n_jobs: int = -1,
     ) -> None:
         self.general_gini = GeneralGini()
         self.feature_gini = FeatureGini()
@@ -30,6 +31,7 @@ class Validator:
         self.plot_graphs = plot_graphs
 
         self.figsize = figsize
+        self.n_jobs = n_jobs
 
         self.console = Console()
 
@@ -66,6 +68,7 @@ class Validator:
             y_true,
             plot=self.plot_graphs,
             figsize=self.figsize,
+            n_jobs=self.n_jobs,
         )
 
         names = np.array(list(coefs.keys()))
@@ -316,6 +319,7 @@ class Validator:
             y_test,
             plot=self.plot_graphs,
             figsize=self.figsize,
+            n_jobs=self.n_jobs,
         )
         keys = list(result_train.keys())
         train_gini = np.array([result_train[el] for el in keys])

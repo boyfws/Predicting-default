@@ -121,11 +121,11 @@ class OversampleGAN:
             self.criterion = nn.MSELoss()
 
     def _fit_D(
-                self,
-                bs: int,
-                real_batch: torch.Tensor,
-                fake_batch: torch.Tensor,
-                labels_real: torch.Tensor
+            self,
+            bs: int,
+            real_batch: torch.Tensor,
+            fake_batch: torch.Tensor,
+            labels_real: torch.Tensor
     ) -> float:
         self.optim_D.zero_grad()
         labels_fake = torch.zeros(bs, 1, device=self.device)

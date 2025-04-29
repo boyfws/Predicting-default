@@ -1,5 +1,7 @@
 import pandas as pd
+import numpy as np
 import torch
+
 from pandas.api.types import is_numeric_dtype
 from sklearn.preprocessing import OrdinalEncoder
 

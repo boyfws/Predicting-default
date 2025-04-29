@@ -7,38 +7,42 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from joblib import Parallel, delayed
+
+from typing import  Union
+
 
 class Binner(TransformerMixin):
     def __init__(
             self,
-            params: dict[str, dict]
+            params: dict[str, dict],
+            n_jobs: int = -1,
     ):
         self.params = params
+        self.n_jobs = n_jobs
 
-    def fit(
-            self,
-            X: pd.DataFrame,
-            y: pd.Series
-    ) -> None:
+    @staticmethod
+    def fit_feature(col: str, feature: pd.Series, y: np.ndarray, param):
+        optb = OptimalBinning(**param, solver="cp")
+        optb.fit(feature, y)
+        optb.binning_table.build()
+        iv = round(optb.binning_table.iv, 4)
+        return col, optb, iv
 
+    def fit(self, X: pd.DataFrame, y: Union[pd.Series, np.ndarray]) -> None:
         X = X.copy()
+        if not isinstance(y, np.ndarray):
+            y_np = y.values
+        else:
+            y_np = y
 
-        self.optb_ = {
-            el: OptimalBinning(
-                **self.params.get(el, {}),
-                solver="cp"
-            )
+        results = Parallel(n_jobs=self.n_jobs)(
+            delayed(self.fit_feature)(el, X[el], y_np, self.params.get(el, {}))
             for el in X.columns
-        }
+        )
 
-        self.iv_ = {}
-
-        for el in X.columns:
-            self.optb_[el].fit(X[el], y)
-
-            self.optb_[el].binning_table.build()
-
-            self.iv_[el] = round(self.optb_[el].binning_table.iv, 4)
+        self.optb_ = {el: optb for el, optb, iv in results}
+        self.iv_ = {el: iv for el, optb, iv in results}
 
     def transform(
             self,

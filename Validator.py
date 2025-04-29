@@ -8,7 +8,7 @@ import numpy as np
 from rich.console import Console
 from rich.panel import Panel
 
-from typing import Optional
+from typing import Optional, Union
 
 
 class Validator:
@@ -391,9 +391,9 @@ class Validator:
     def validate(
             self,
             X: pd.DataFrame,
-            y: pd.Series,
+            y: Union[pd.Series, np.ndarray],
             model: Model,
-            train_data: tuple[pd.DataFrame, pd.Series],
+            train_data: tuple[pd.DataFrame, Union[pd.Series, np.ndarray]],
             binner: Optional[Binner] = None,
     ) -> None:
         if binner is None:
@@ -406,8 +406,21 @@ class Validator:
             y_pred_test = model.predict_proba(X_transformed_test)
             y_pred_train = model.predict_proba(X_transformed_train)
 
-        y_test_np = y.to_numpy()
-        y_train_np = train_data[1].to_numpy()
+        if y_pred_test.ndim == 2:
+            y_pred_test = y_pred_test[:, 1]
+
+        if y_pred_train.ndim == 2:
+            y_pred_train = y_pred_train[:, 1]
+
+        if isinstance(y, np.ndarray):
+            y_test_np = y.copy()
+        else:
+            y_test_np = y.to_numpy()
+
+        if isinstance(train_data[1], np.ndarray):
+            y_train_np = train_data[1].copy()
+        else:
+            y_train_np = train_data[1].to_numpy()
 
         scores = []
 

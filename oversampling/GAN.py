@@ -61,6 +61,7 @@ class OversampleGAN:
                     nn.Linear(hidden_dims[0], hidden_dims[1]),
                     nn.ReLU(inplace=True),
                     nn.Linear(hidden_dims[1], output_dim),
+                    nn.Tanh()
                 )
                 self._init_weights()
 

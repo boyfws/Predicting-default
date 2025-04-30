@@ -57,10 +57,8 @@ class OversampleGAN:
                 super().__init__()
                 self.net = nn.Sequential(
                     nn.Linear(latent_dim, hidden_dims[0]),
-                    nn.BatchNorm1d(hidden_dims[0]),
                     nn.ReLU(inplace=True),
                     nn.Linear(hidden_dims[0], hidden_dims[1]),
-                    nn.BatchNorm1d(hidden_dims[1]),
                     nn.ReLU(inplace=True),
                     nn.Linear(hidden_dims[1], output_dim),
                 )

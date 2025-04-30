@@ -24,7 +24,7 @@ class DataTransformer:
         if df.empty:
             raise RuntimeError('DataFrame is empty')
 
-        if df.select_dtypes(include="number").applymap(np.isinf).any(axis=None):
+        if df.select_dtypes(include="number").map(np.isinf).any(axis=None):
             raise RuntimeError('DataFrame is infinite')
 
         df = df.copy()

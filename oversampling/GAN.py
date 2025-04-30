@@ -29,9 +29,7 @@ class OversampleGAN:
         neg_smooth: float = 0,
         leaky_relu_coef: float = 0.2,
         device: torch.device | None = None,
-        loss: str = "BCE"
     ):
-        assert loss in ["BCE", "MSE"]
         self.data_transformer = DataTransformer()
         self.latent_dim = latent_dim
         self.hidden_dims = hidden_dims
@@ -44,7 +42,6 @@ class OversampleGAN:
 
         self.pos_smooth = pos_smooth
         self.neg_smooth = neg_smooth
-        self.loss = loss
 
         random.seed(seed)
         np.random.seed(seed)
@@ -96,7 +93,6 @@ class OversampleGAN:
                     nn.LeakyReLU(leaky_relu_coef, inplace=True),
 
                     nn.utils.spectral_norm(nn.Linear(hidden_dims[0], 1), n_power_iterations=1),
-                    nn.Sigmoid(),
                 )
                 self._init_weights()
 
@@ -119,28 +115,18 @@ class OversampleGAN:
         self.optim_G = optim.Adam(self.G.parameters(), lr=self.G_lr, betas=(0.5, 0.999))
         self.optim_D = optim.Adam(self.D.parameters(), lr=self.D_lr, betas=(0.5, 0.999))
 
-        if self.loss == "BCE":
-            self.criterion = nn.BCELoss()
-        elif self.loss == "MSE":
-            self.criterion = nn.MSELoss()
-
     def _fit_D(
             self,
-            bs: int,
             real_batch: torch.Tensor,
             fake_batch: torch.Tensor,
-            labels_real: torch.Tensor
     ) -> float:
         self.optim_D.zero_grad()
-        labels_fake = torch.zeros(bs, 1, device=self.device)
 
         out_real = self.D(real_batch)
-        loss_real = self.criterion(out_real, labels_real - self.pos_smooth)
 
         out_fake = self.D(fake_batch)
-        loss_fake = self.criterion(out_fake, labels_fake + self.neg_smooth)
 
-        loss_D = loss_real + loss_fake
+        loss_D = out_fake.mean() - out_real.mean()
         loss_D.backward()
         self.optim_D.step()
 
@@ -149,14 +135,13 @@ class OversampleGAN:
     def _fit_G(
         self,
         fake_batch: torch.Tensor,
-        labels_real: torch.Tensor
 
     ) -> float:
         self.optim_G.zero_grad()
         self.optim_D.zero_grad()
 
         out = self.D(fake_batch)
-        loss_G = self.criterion(out, labels_real)
+        loss_G = - out.mean()
         loss_G.backward()
         self.optim_G.step()
 
@@ -167,7 +152,7 @@ class OversampleGAN:
             num_workers: int = 4,
             prefetch_factor: int = 20
         ) -> "OversampleGAN":
-        
+
         data = self.data_transformer.fit_transform(df).float()
         dataset = TensorDataset(data)
         loader = DataLoader(
@@ -203,18 +188,13 @@ class OversampleGAN:
                 z = torch.randn(bs, self.latent_dim, device=self.device)
                 fake_batch = self.G(z)
 
-                labels_real = torch.ones(bs, 1, device=self.device)
-
                 loss_D = self._fit_D(
-                        bs,
                         real_batch,
                         fake_batch.detach(),
-                        labels_real
                 )
 
                 loss_G = self._fit_G(
                         fake_batch,
-                        labels_real
                 )
 
                 self.losses[epoch, i, 0] = loss_D

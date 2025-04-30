@@ -3,12 +3,14 @@ import numpy as np
 import torch
 
 from pandas.api.types import is_numeric_dtype
-from sklearn.preprocessing import OrdinalEncoder
+from sklearn.preprocessing import OrdinalEncoder, StandardScaler
 
 
 class DataTransformer:
     def fit_transform(self, df: pd.DataFrame) -> torch.Tensor:
         df = df.copy()
+
+        self.final_scaler = StandardScaler()
 
         self.encoders = {}
         self.min_max = {}
@@ -37,10 +39,14 @@ class DataTransformer:
 
         self.columns = df.columns
 
-        return torch.Tensor(df.astype(np.float32).to_numpy())
+        scaled = self.final_scaler.fit_transform(df.to_numpy())
+
+        return torch.Tensor(scaled.astype(np.float32))
 
     def inverse_transform(self, tensor: torch.Tensor) -> pd.DataFrame:
-        df = pd.DataFrame(tensor, columns=self.columns)
+        tensor_unscaled = self.final_scaler.inverse_transform(tensor)
+
+        df = pd.DataFrame(tensor_unscaled, columns=self.columns)
         for el in df.columns:
 
             if el in self.encoders:

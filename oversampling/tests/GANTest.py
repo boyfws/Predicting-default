@@ -4,6 +4,14 @@ import numpy as np
 
 from oversampling import OversampleGAN
 
+test_data = pd.DataFrame({
+    'numeric': [1.5, np.nan, 3.0, 4.2, -1.8],  # numeric
+    'categorical': ['apple', 'banana', None, 'apple', 'cherry'],  # obj
+    'binary': [True, False, True, None, False],  # obj
+    "binary2": [True, False, True, True, False],  # bool
+    'categorical2': ['apple', 'banana', "cherry", 'apple', 'cherry'],  # obj
+})
+
 
 def test_not_fitted_call1():
     model = OversampleGAN()
@@ -37,14 +45,6 @@ def test_random_state():
         seed=42,
         leaky_relu_coef=0.2,
     )
-
-    test_data = pd.DataFrame({
-        'numeric': [1.5, np.nan, 3.0, 4.2, -1.8],  # numeric
-        'categorical': ['apple', 'banana', None, 'apple', 'cherry'],  # obj
-        'binary': [True, False, True, None, False],  # obj
-        "binary2": [True, False, True, True, False],  # bool
-        'categorical2': ['apple', 'banana', "cherry", 'apple', 'cherry'],  # obj
-    })
 
     model1 = OversampleGAN(**PARAMS)
     model1.fit(test_data)
@@ -91,14 +91,6 @@ def test_random_state_in_generation():
         leaky_relu_coef=0.2,
     )
 
-    test_data = pd.DataFrame({
-        'numeric': [1.5, np.nan, 3.0, 4.2, -1.8],  # numeric
-        'categorical': ['apple', 'banana', None, 'apple', 'cherry'],  # obj
-        'binary': [True, False, True, None, False],  # obj
-        "binary2": [True, False, True, True, False],  # bool
-        'categorical2': ['apple', 'banana', "cherry", 'apple', 'cherry'],  # obj
-    })
-
     model = OversampleGAN(**PARAMS)
     model.fit(test_data)
     gen1 = model.generate(100, seed=42)
@@ -109,5 +101,41 @@ def test_random_state_in_generation():
         gen2,
         check_dtype=True,
     )
+
+
+def test_model_saving(tmp_path):
+    target_path = tmp_path / "G.pth"
+
+    PARAMS = dict(
+        latent_dim=1,
+        hidden_dims=(3, 2),
+        D_lr=1e-4,
+        G_lr=4e-4,
+        batch_size=2,
+        epochs=1,
+        seed=42,
+        leaky_relu_coef=0.2,
+    )
+
+    model = OversampleGAN(**PARAMS)
+    model.fit(test_data)
+    gen = model.generate(100, seed=42)
+
+    model.save_generator(target_path)
+
+    loaded_model = OversampleGAN(**PARAMS).load_generator(target_path)
+
+    assert loaded_model.latent_dim == PARAMS["latent_dim"]
+    assert loaded_model.hidden_dims == PARAMS["hidden_dims"]
+    assert loaded_model.input_dim == model.input_dim
+
+    gen_loaded = loaded_model.generate(100, seed=42)
+
+    pd.testing.assert_frame_equal(
+        gen,
+        gen_loaded,
+        check_dtype=True,
+    )
+
 
 

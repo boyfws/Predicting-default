@@ -15,6 +15,7 @@ from .DataTransformer import DataTransformer
 from .GAN_models import *
 
 from typing import Optional
+from pathlib import Path
 
 
 class OversampleGAN:
@@ -119,6 +120,8 @@ class OversampleGAN:
         )
 
         input_dim = data.size(1)
+
+        self.input_dim = input_dim
         self._build_models(input_dim)
 
         self.G.train()
@@ -191,21 +194,47 @@ class OversampleGAN:
 
     def save_generator(
             self,
-            filepath: str
+            filepath: str | Path
     ) -> None:
         self._check_fit()
 
         if not hasattr(self, 'G') or self.G is None:
             raise RuntimeError("Model is not fitted")
-        torch.save(self.G.state_dict(), filepath)
+
+        data_transformer_params = self.data_transformer.get_params()
+        state_dict = self.G.state_dict()
+
+        final_dict = {
+            "model": state_dict,
+            "data_transformer_params": data_transformer_params,
+            "G_params": [self.latent_dim, list(self.hidden_dims), self.input_dim]
+        }
+        torch.save(final_dict, filepath)
 
     def load_generator(
             self,
-            filepath: str
+            filepath: str | Path
     ) -> "OversampleGAN":
-        pass
+        data = torch.load(filepath, weights_only=False)
 
-    def plot_fit(self, figsize: tuple[int, int] = (10, 10)) -> None:
+        self.data_transformer = DataTransformer().save_params(
+            data["data_transformer_params"]
+        )
+        G_params = data["G_params"]
+
+        self.latent_dim, self.hidden_dims, self.input_dim = G_params[0], tuple(G_params[1]), G_params[2]
+        self.G = Generator(*G_params).to(self.device)
+        self.G.load_state_dict(data["model"])
+        self.G.eval()
+
+        self.fitted = True
+
+        return self
+
+    def plot_fit(
+            self,
+            figsize: tuple[int, int] = (10, 10)
+    ) -> None:
         self._check_fit()
 
         self.G.eval()

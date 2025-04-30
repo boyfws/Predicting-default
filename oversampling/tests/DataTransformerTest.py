@@ -15,10 +15,16 @@ test_data = pd.DataFrame({
 })
 
 
-def test_not_fitted_call():
+def test_not_fitted_call1():
     with pytest.raises(RuntimeError) as e:
         transformer = DataTransformer().inverse_transform(torch.Tensor([[1, 1]]))
     assert str(e.value) == 'fit_transform method must be called before inverse_transform'
+
+
+def test_not_fitted_call2():
+    with pytest.raises(RuntimeError) as e:
+        transformer = DataTransformer().get_params()
+    assert str(e.value) == 'fit_transform method must be called before get_params'
 
 
 def test_output_type():

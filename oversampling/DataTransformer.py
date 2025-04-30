@@ -97,6 +97,8 @@ class DataTransformer:
         return df
 
     def get_params(self) -> dict:
+        if not self.fitted:
+            raise RuntimeError('fit_transform method must be called before get_params')
         encoders = {}
         for col, enc in self.encoders.items():
             mi = None

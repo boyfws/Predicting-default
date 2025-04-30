@@ -1,0 +1,25 @@
+import torch
+import torch.nn as nn
+
+
+class Generator(nn.Module):
+    def __init__(self, latent_dim, hidden_dims, output_dim):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(latent_dim, hidden_dims[0]),
+            nn.ReLU(inplace=True),
+            nn.Linear(hidden_dims[0], hidden_dims[1]),
+            nn.ReLU(inplace=True),
+            nn.Linear(hidden_dims[1], output_dim),
+            nn.Tanh()
+        )
+        self._init_weights()
+
+    def _init_weights(self):
+        for m in self.net:
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                nn.init.zeros_(m.bias)
+
+    def forward(self, z):
+        return self.net(z)

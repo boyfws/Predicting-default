@@ -4,7 +4,6 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 import torch
-import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -13,6 +12,9 @@ import random
 import pandas as pd
 
 from .DataTransformer import DataTransformer
+from .GAN_models import *
+
+from typing import Optional
 
 
 class OversampleGAN:
@@ -35,14 +37,9 @@ class OversampleGAN:
         self.G_lr = G_lr
         self.batch_size = batch_size
         self.epochs = epochs
-
         self.leaky_relu_coef = leaky_relu_coef
+        self.seed = seed
 
-        random.seed(seed)
-        np.random.seed(seed)
-        torch.manual_seed(seed)
-        if torch.cuda.is_available():
-            torch.cuda.manual_seed_all(seed)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
@@ -50,62 +47,23 @@ class OversampleGAN:
             torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         )
 
+        self.fitted = False
+
+    def _check_fit(self):
+        if not self.fitted:
+            raise RuntimeError('Instance has not been fitted yet.')
+
+    @staticmethod
+    def _set_seed(seed):
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+
     def _build_models(self, input_dim: int):
-
-        class Generator(nn.Module):
-            def __init__(self, latent_dim, hidden_dims, output_dim):
-                super().__init__()
-                self.net = nn.Sequential(
-                    nn.Linear(latent_dim, hidden_dims[0]),
-                    nn.ReLU(inplace=True),
-                    nn.Linear(hidden_dims[0], hidden_dims[1]),
-                    nn.ReLU(inplace=True),
-                    nn.Linear(hidden_dims[1], output_dim),
-                    nn.Tanh()
-                )
-                self._init_weights()
-
-            def _init_weights(self):
-                for m in self.net:
-                    if isinstance(m, nn.Linear):
-                        nn.init.xavier_uniform_(m.weight)
-                        nn.init.zeros_(m.bias)
-
-            def forward(self, z):
-                return self.net(z)
-
-        leaky_relu_coef = self.leaky_relu_coef
-
-        class Discriminator(nn.Module):
-            def __init__(self, input_dim, hidden_dims):
-                super().__init__()
-                self.net = nn.Sequential(
-                    nn.utils.spectral_norm(nn.Linear(input_dim, hidden_dims[1]), n_power_iterations=1),
-                    nn.LeakyReLU(leaky_relu_coef, inplace=True),
-
-                    nn.utils.spectral_norm(nn.Linear(hidden_dims[1], hidden_dims[0]), n_power_iterations=1),
-                    nn.LeakyReLU(leaky_relu_coef, inplace=True),
-
-                    nn.utils.spectral_norm(nn.Linear(hidden_dims[0], 1), n_power_iterations=1),
-                )
-                self._init_weights()
-
-            def _init_weights(self):
-                for m in self.net:
-                    if isinstance(m, nn.Linear):
-                        nn.init.xavier_uniform_(m.weight)
-                        nn.init.zeros_(m.bias)
-                    elif hasattr(m, "weight_orig"):
-                        nn.init.xavier_uniform_(m.weight_orig)
-                        if m.bias is not None:
-                            nn.init.zeros_(m.bias)
-
-            def forward(self, x):
-                return self.net(x)
-
-
         self.G = Generator(self.latent_dim, self.hidden_dims, input_dim).to(self.device)
-        self.D = Discriminator(input_dim, self.hidden_dims).to(self.device)
+        self.D = Discriminator(input_dim, self.hidden_dims, self.leaky_relu_coef).to(self.device)
         self.optim_G = optim.Adam(self.G.parameters(), lr=self.G_lr, betas=(0.5, 0.999))
         self.optim_D = optim.Adam(self.D.parameters(), lr=self.D_lr, betas=(0.5, 0.999))
 
@@ -147,6 +105,7 @@ class OversampleGAN:
             num_workers: int = 4,
             prefetch_factor: int = 20
         ) -> "OversampleGAN":
+        self._set_seed(self.seed)
 
         data = self.data_transformer.fit_transform(df).float()
         dataset = TensorDataset(data)
@@ -165,7 +124,7 @@ class OversampleGAN:
         self.G.train()
         self.D.train()
 
-        self.losses = np.zeros(
+        losses = np.zeros(
             (self.epochs, len(loader), 2), dtype=np.float64
         )
 
@@ -192,8 +151,8 @@ class OversampleGAN:
                         fake_batch,
                 )
 
-                self.losses[epoch, i, 0] = loss_D
-                self.losses[epoch, i, 1] = loss_G
+                losses[epoch, i, 0] = loss_D
+                losses[epoch, i, 1] = loss_G
 
                 if i != len(loader) - 1:
                     pbar.set_postfix({
@@ -202,26 +161,40 @@ class OversampleGAN:
                     })
                 else:
                     pbar.set_postfix({
-                            "D_loss": f"{np.mean(self.losses[epoch, :, 0]):.4f}",
-                            "G_loss": f"{np.mean(self.losses[epoch, :, 1]):.4f}"
+                            "D_loss": f"{np.mean(losses[epoch, :, 0]):.4f}",
+                            "G_loss": f"{np.mean(losses[epoch, :, 1]):.4f}"
                     })
 
+        self.losses = losses.mean(axis=1)
         self.G.eval()
         self.D.eval()
 
+        self.fitted = True
         return self
 
-    def generate(self, num_samples: int) -> pd.DataFrame:
+    def generate(
+            self,
+            num_samples: int,
+            seed: Optional[int] = None
+    ) -> pd.DataFrame:
+        self._check_fit()
+
+        if seed is not None:
+            self._set_seed(seed)
+
         self.G.eval()
         with torch.no_grad():
             z = torch.randn(num_samples, self.latent_dim, device=self.device)
             gen_tensor = self.G(z).cpu()
+
         return self.data_transformer.inverse_transform(gen_tensor)
 
     def save_generator(
             self,
             filepath: str
     ) -> None:
+        self._check_fit()
+
         if not hasattr(self, 'G') or self.G is None:
             raise RuntimeError("Model is not fitted")
         torch.save(self.G.state_dict(), filepath)
@@ -233,7 +206,10 @@ class OversampleGAN:
         pass
 
     def plot_fit(self, figsize: tuple[int, int] = (10, 10)) -> None:
-        mean_losses = self.losses.mean(axis=1)
+        self._check_fit()
+
+        self.G.eval()
+        mean_losses = self.losses
         epochs = np.arange(1, mean_losses.shape[0] + 1)
 
         plt.figure(figsize=figsize)

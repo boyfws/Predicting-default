@@ -166,7 +166,7 @@ class OversampleGAN:
         self.D.train()
 
         self.losses = np.zeros(
-            (self.epochs, len(loader), 2), dtype=np.float16
+            (self.epochs, len(loader), 2), dtype=np.float64
         )
 
         for epoch in range(self.epochs):

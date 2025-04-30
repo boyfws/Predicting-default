@@ -121,7 +121,10 @@ class OversampleGAN:
 
         out_fake = self.D(fake_batch)
 
-        loss_D = out_fake.mean() - out_real.mean()
+        loss_real = torch.relu(1.0 - out_real).mean()
+        loss_fake = torch.relu(1.0 + out_fake).mean()
+        loss_D = loss_real + loss_fake
+
         loss_D.backward()
         self.optim_D.step()
 
@@ -155,7 +158,7 @@ class OversampleGAN:
             batch_size=self.batch_size,
             shuffle=True,
             num_workers=num_workers,
-            pin_memory=str(self.device).lower() == "cuda",
+            pin_memory=self.device.type == "cuda",
             prefetch_factor=prefetch_factor
         )
 

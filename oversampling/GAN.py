@@ -25,8 +25,6 @@ class OversampleGAN:
         batch_size: int = 512,
         epochs: int = 30,
         seed: int = 42,
-        pos_smooth: float = 0,
-        neg_smooth: float = 0,
         leaky_relu_coef: float = 0.2,
         device: torch.device | None = None,
     ):
@@ -39,9 +37,6 @@ class OversampleGAN:
         self.epochs = epochs
 
         self.leaky_relu_coef = leaky_relu_coef
-
-        self.pos_smooth = pos_smooth
-        self.neg_smooth = neg_smooth
 
         random.seed(seed)
         np.random.seed(seed)

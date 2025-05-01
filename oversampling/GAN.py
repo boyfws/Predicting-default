@@ -32,6 +32,7 @@ class OversampleGAN:
         seed: int = 42,
         leaky_relu_coef: float = 0.2,
         device: torch.device | None = None,
+        n_critic: int = 5
     ):
         self.data_transformer = DataTransformer()
         self.latent_dim = latent_dim
@@ -43,6 +44,7 @@ class OversampleGAN:
         self.leaky_relu_coef = leaky_relu_coef
         self.seed = seed
         self.dropout = dropout
+        self.n_critic = n_critic
 
 
         torch.backends.cudnn.deterministic = True
@@ -69,8 +71,8 @@ class OversampleGAN:
     def _build_models(self, input_dim: int):
         self.G = Generator(self.latent_dim, self.hidden_dims, input_dim).to(self.device)
         self.D = Discriminator(input_dim, self.hidden_dims[::-1], self.leaky_relu_coef, self.dropout).to(self.device)
-        self.optim_G = optim.Adam(self.G.parameters(), lr=self.G_lr, betas=(0.5, 0.999))
-        self.optim_D = optim.Adam(self.D.parameters(), lr=self.D_lr, betas=(0.5, 0.999))
+        self.optim_G = optim.Adam(self.G.parameters(), lr=self.G_lr, betas=(0.0, 0.999))
+        self.optim_D = optim.Adam(self.D.parameters(), lr=self.D_lr, betas=(0.0, 0.999))
 
     def _fit_D(
             self,
@@ -130,8 +132,8 @@ class OversampleGAN:
         self.G.train()
         self.D.train()
 
-        losses = np.zeros(
-            (self.epochs, len(loader), 2), dtype=np.float64
+        self.losses = np.zeros(
+            (self.epochs, 2), dtype=np.float64
         )
 
         for epoch in range(self.epochs):
@@ -141,6 +143,8 @@ class OversampleGAN:
                     file=sys.stdout,
                     leave=True
             )
+            epoch_loss_D = []
+            epoch_loss_G = []
             for i, (real_batch,) in enumerate(pbar):
                 real_batch = real_batch.to(self.device)
                 bs = real_batch.size(0)
@@ -153,25 +157,32 @@ class OversampleGAN:
                         fake_batch.detach(),
                 )
 
-                loss_G = self._fit_G(
-                        fake_batch,
-                )
+                if i % self.n_critic == 0:
 
-                losses[epoch, i, 0] = loss_D
-                losses[epoch, i, 1] = loss_G
+                    loss_G = self._fit_G(
+                            fake_batch,
+                    )
+                    epoch_loss_G.append(loss_G)
+
+                epoch_loss_D.append(loss_D)
 
                 if i != len(loader) - 1:
-                    pbar.set_postfix({
+                    dict_to_print = {
                             "D_loss": f"{loss_D:.4f}",
-                            "G_loss": f"{loss_G:.4f}"
-                    })
+                    }
+                    if i % self.n_critic == 0:
+                        dict_to_print["G_loss"] = f"{loss_G:.4f}"
+
+                    pbar.set_postfix(dict_to_print)
                 else:
+                    self.losses[epoch, 0] = np.mean(epoch_loss_D)
+                    self.losses[epoch, 1] = np.mean(epoch_loss_G)
+
                     pbar.set_postfix({
-                            "D_loss": f"{np.mean(losses[epoch, :, 0]):.4f}",
-                            "G_loss": f"{np.mean(losses[epoch, :, 1]):.4f}"
+                            "D_loss": f"{self.losses[epoch, 0]:.4f}",
+                            "G_loss": f"{self.losses[epoch, 1]:.4f}"
                     })
 
-        self.losses = losses.mean(axis=1)
         self.G.eval()
         self.D.eval()
 

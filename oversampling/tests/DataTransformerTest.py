@@ -68,6 +68,7 @@ def test_data_transformer_serialization_structure():
     assert 'min_max' in state
     assert 'types' in state
     assert 'columns' in state
+    assert "apply_round" in state
 
     json_state = json.dumps(state, indent=2)
     assert isinstance(json_state, str)
@@ -150,4 +151,24 @@ def test_edge_cases_extreme_values():
     assert str(e.value) == 'DataFrame is infinite'
 
 
+def test_int_cols_with_na():
+    data = pd.DataFrame({
+        "col": [1, 2, 3, None]
+    })
+
+    transformer = DataTransformer()
+    transformed = transformer.fit_transform(data)
+
+    torch.manual_seed(42)
+    transformed += torch.randn_like(transformed) * 0.02
+
+    # Class should understand that column contains integers, except it-s data type - float64
+    inverse_transformed = transformer.inverse_transform(transformed)
+
+    pd.testing.assert_frame_equal(
+        data,
+        inverse_transformed,
+        check_dtype=True,
+        check_exact=False,
+    )
 

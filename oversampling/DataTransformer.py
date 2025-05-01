@@ -12,6 +12,7 @@ class DataTransformer:
         self.encoders = {}
         self.min_max = {}
         self.types = {}
+        self.apply_round = {}
 
         self.columns = []
 
@@ -31,12 +32,18 @@ class DataTransformer:
 
         for el in df.columns:
             self.types[el] = df[el].dtype
+            self.apply_round[el] = False
 
             if is_numeric_dtype(df[el]) or is_bool_dtype(df[el]):
 
                 mask = df[el].isna()
                 if mask.any():
                     df[f"{el}_mask"] = mask
+
+                if (
+                        df[el][~mask].round() == df[el][~mask]
+                ).fillna(False).all():
+                    self.apply_round[el] = True
 
                 df[el] = df[el].fillna(0)
 
@@ -92,6 +99,10 @@ class DataTransformer:
                 df = df.drop(el, axis=1)
 
         for el in self.types:
+
+            if self.apply_round[el]:
+                df[el] = df[el].round()
+
             df[el] = df[el].astype(self.types[el])
 
         return df
@@ -112,23 +123,24 @@ class DataTransformer:
                 mi = [idx]
 
             encoders[col] = {
-                'categories':       enc.categories_[0].tolist(),
+                'categories': enc.categories_[0].tolist(),
                 'encoded_missing_value': enc.encoded_missing_value,
-                'missing_indices':    mi
+                'missing_indices': mi
             }
 
         return {
             'final_scaler': {
-                'scale_':   self.final_scaler.scale_.tolist(),
-                'min_':     self.final_scaler.min_.tolist(),
-                'data_min_':self.final_scaler.data_min_.tolist(),
-                'data_max_':self.final_scaler.data_max_.tolist(),
+                'scale_': self.final_scaler.scale_.tolist(),
+                'min_': self.final_scaler.min_.tolist(),
+                'data_min_': self.final_scaler.data_min_.tolist(),
+                'data_max_': self.final_scaler.data_max_.tolist(),
                 'feature_range': self.final_scaler.feature_range
             },
             'encoders': encoders,
-            'min_max':   self.min_max,
-            'types':     {col: str(dtype) for col, dtype in self.types.items()},
-            'columns':   self.columns.tolist()
+            'min_max': self.min_max,
+            'types': {col: str(dtype) for col, dtype in self.types.items()},
+            'columns': self.columns.tolist(),
+            "apply_round": self.apply_round,
         }
 
     @classmethod
@@ -137,11 +149,11 @@ class DataTransformer:
 
         fs = params['final_scaler']
         scaler = MinMaxScaler(feature_range=tuple(fs['feature_range']))
-        scaler.scale_     = np.array(fs['scale_'])
-        scaler.min_       = np.array(fs['min_'])
-        scaler.data_min_  = np.array(fs['data_min_'])
-        scaler.data_max_  = np.array(fs['data_max_'])
-        scaler.data_range_= scaler.data_max_ - scaler.data_min_
+        scaler.scale_ = np.array(fs['scale_'])
+        scaler.min_ = np.array(fs['min_'])
+        scaler.data_min_ = np.array(fs['data_min_'])
+        scaler.data_max_ = np.array(fs['data_max_'])
+        scaler.data_range_ = scaler.data_max_ - scaler.data_min_
         self.final_scaler = scaler
 
         # encoders
@@ -159,6 +171,8 @@ class DataTransformer:
         self.min_max = params['min_max']
         self.types = {col: np.dtype(dt) for col, dt in params['types'].items()}
         self.columns = pd.Index(params['columns'])
+
+        self.apply_round = params['apply_round']
 
         self.fitted = True
 

@@ -3,17 +3,35 @@ import torch.nn as nn
 
 
 class Discriminator(nn.Module):
-    def __init__(self, input_dim, hidden_dims, leaky_relu_coef):
+    def __init__(self,
+                 input_dim: int,
+                 hidden_dims: tuple[int, int],
+                 leaky_relu_coef: float,
+                 dropout: tuple[float, float]
+                 ):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.utils.spectral_norm(nn.Linear(input_dim, hidden_dims[1]), n_power_iterations=1),
-            nn.LeakyReLU(leaky_relu_coef, inplace=True),
+        layers = [
+            nn.utils.spectral_norm(nn.Linear(input_dim, hidden_dims[0]), n_power_iterations=1),
+            nn.LeakyReLU(leaky_relu_coef, inplace=True)
+        ]
+        if dropout[0] >= 1e-7:
+            layers += [
+                nn.Dropout(dropout[0])
+            ]
 
-            nn.utils.spectral_norm(nn.Linear(hidden_dims[1], hidden_dims[0]), n_power_iterations=1),
+        layers += [
+            nn.utils.spectral_norm(nn.Linear(hidden_dims[0], hidden_dims[1]), n_power_iterations=1),
             nn.LeakyReLU(leaky_relu_coef, inplace=True),
+        ]
 
-            nn.utils.spectral_norm(nn.Linear(hidden_dims[0], 1), n_power_iterations=1),
-        )
+        if dropout[1] >= 1e-7:
+            layers += [nn.Dropout(dropout[1])]
+
+        layers += [
+            nn.utils.spectral_norm(nn.Linear(hidden_dims[1], 1), n_power_iterations=1)
+        ]
+
+        self.net = nn.Sequential(*layers)
         self._init_weights()
 
     def _init_weights(self):

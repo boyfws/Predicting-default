@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
+from torchgan.losses import WassersteinGradientPenalty
+
 
 import numpy as np
 import random
@@ -22,7 +24,8 @@ class OversampleGAN:
     def __init__(
         self,
         latent_dim: int = 100,
-        hidden_dims: tuple[int, int] = (128, 64),
+        hidden_dims: tuple[int, int] = (64, 128),
+        dropout: tuple[float, float] = (0.0, 0.0),
         D_lr: float = 1e-4,
         G_lr: float = 4e-4,
         batch_size: int = 512,
@@ -30,6 +33,7 @@ class OversampleGAN:
         seed: int = 42,
         leaky_relu_coef: float = 0.2,
         device: torch.device | None = None,
+        gp: bool = True,
     ):
         self.data_transformer = DataTransformer()
         self.latent_dim = latent_dim
@@ -40,6 +44,11 @@ class OversampleGAN:
         self.epochs = epochs
         self.leaky_relu_coef = leaky_relu_coef
         self.seed = seed
+        self.gp = gp
+        self.dropout = dropout
+
+        if gp:
+            self.gp_loss_fn = WassersteinGradientPenalty(reduction='mean', lambd=10.0)
 
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
@@ -64,7 +73,7 @@ class OversampleGAN:
 
     def _build_models(self, input_dim: int):
         self.G = Generator(self.latent_dim, self.hidden_dims, input_dim).to(self.device)
-        self.D = Discriminator(input_dim, self.hidden_dims, self.leaky_relu_coef).to(self.device)
+        self.D = Discriminator(input_dim, self.hidden_dims[::-1], self.leaky_relu_coef, self.dropout).to(self.device)
         self.optim_G = optim.Adam(self.G.parameters(), lr=self.G_lr, betas=(0.5, 0.999))
         self.optim_D = optim.Adam(self.D.parameters(), lr=self.D_lr, betas=(0.5, 0.999))
 
@@ -76,10 +85,23 @@ class OversampleGAN:
         self.optim_D.zero_grad()
 
         out_real = self.D(real_batch)
-
         out_fake = self.D(fake_batch)
 
-        loss_D = out_fake.mean() - out_real.mean()
+        wgan_loss = out_fake.mean() - out_real.mean()
+
+        if self.gp:
+            alpha = torch.rand(real_batch.size(0), 1, device=real_batch.device)
+            alpha = alpha.expand_as(real_batch)
+            interpolates = alpha * real_batch + (1 - alpha) * fake_batch
+            interpolates.requires_grad_(True)
+
+            d_interpolates = self.D(interpolates)
+
+            gp = self.gp_loss_fn(interpolates, d_interpolates)
+
+            loss_D = wgan_loss + gp
+        else:
+            loss_D = wgan_loss
 
         loss_D.backward()
         self.optim_D.step()

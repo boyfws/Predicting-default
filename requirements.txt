@@ -2,10 +2,12 @@ numpy
 pandas
 matplotlib
 seaborn
-optbinning
-scikit-learn
+optbinning~=0.20.1
+scikit-learn~=1.6.1
 rich
 scipy
 joblib
 torch
 tqdm
+pytest~=8.3.5
+torchgan

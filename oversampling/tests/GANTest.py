@@ -37,7 +37,7 @@ def test_not_fitted_call3():
 def test_random_state():
     PARAMS = dict(
         latent_dim=1,
-        hidden_dims=(3, 2),
+        hidden_dims=(2, 3),
         D_lr=1e-4,
         G_lr=4e-4,
         batch_size=2,
@@ -82,7 +82,7 @@ def test_random_state():
 def test_random_state_in_generation():
     PARAMS = dict(
         latent_dim=1,
-        hidden_dims=(3, 2),
+        hidden_dims=(2, 3),
         D_lr=1e-4,
         G_lr=4e-4,
         batch_size=2,
@@ -108,7 +108,7 @@ def test_model_saving(tmp_path):
 
     PARAMS = dict(
         latent_dim=1,
-        hidden_dims=(3, 2),
+        hidden_dims=(2, 3),
         D_lr=1e-4,
         G_lr=4e-4,
         batch_size=2,

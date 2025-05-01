@@ -138,4 +138,22 @@ def test_model_saving(tmp_path):
     )
 
 
+def test_dropout():
+    PARAMS = dict(
+        latent_dim=1,
+        hidden_dims=(2, 3),
+        D_lr=1e-4,
+        G_lr=4e-4,
+        batch_size=2,
+        epochs=1,
+        seed=42,
+        leaky_relu_coef=0.2,
+        dropout=(0.33, 0.5),
+    )
+
+    model = OversampleGAN(**PARAMS)
+    model.fit(test_data)
+    gen = model.generate(100, seed=42)
+
+
 

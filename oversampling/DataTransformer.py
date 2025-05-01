@@ -18,6 +18,17 @@ class DataTransformer:
 
         self.fitted = False
 
+    @staticmethod
+    def _get_unique_vals(col: pd.Series) -> list:
+        unique = col.unique()
+        nans = pd.isna(unique)
+
+        uniq_list = list(unique[~nans])
+        if any(nans):
+            uniq_list.append(np.nan)
+
+        return uniq_list
+
     def fit_transform(
             self,
             df: pd.DataFrame
@@ -49,7 +60,9 @@ class DataTransformer:
 
             else:
                 self.encoders[el] = OrdinalEncoder(
-                    categories=[df[el].unique()],
+                    categories=[
+                        self._get_unique_vals(df[el])
+                    ],
                     encoded_missing_value=-1
                 )
 

@@ -172,3 +172,20 @@ def test_int_cols_with_na():
         check_exact=False,
     )
 
+
+def test_nan_order_cat_cols():
+    # The test is written for the falling case
+    # when we pass elments to OrdinalEncoder
+    # in such an order that nan is not at the end
+    # like that:
+    # self.encoders[el] = OrdinalEncoder(
+    #    categories=[df[el].unique()],
+    #    encoded_missing_value=-1
+    # )
+    # it might give such error E
+
+    # ValueError: Nan should be the last element in user provided categories,
+    # see categories [nan 'a'] in column #0
+    data = pd.DataFrame({"1": [np.nan, np.nan, np.nan, "a"]})
+    transformer = DataTransformer()
+    transformed = transformer.fit_transform(data)

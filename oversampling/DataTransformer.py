@@ -25,7 +25,7 @@ class DataTransformer:
 
         uniq_list = list(unique[~nans])
         if any(nans):
-            uniq_list.append(np.nan)
+            uniq_list.append(None)
 
         return uniq_list
 
@@ -65,7 +65,7 @@ class DataTransformer:
                     ],
                     encoded_missing_value=-1
                 )
-
+                df[el] = df[el].where(pd.notnull(df[el]), None)
                 transformed = self.encoders[el].fit_transform(df[el].to_numpy().reshape(-1, 1))
 
                 self.min_max[el] = [transformed.min(), transformed.max()]

@@ -10,4 +10,3 @@ joblib
 torch
 tqdm
 pytest~=8.3.5
-torchgan

@@ -24,8 +24,8 @@ class OversampleGAN:
     def __init__(
         self,
         latent_dim: int = 100,
-        hidden_dims: tuple[int, int] = (64, 128),
-        dropout: tuple[float, float] = (0.0, 0.0),
+        hidden_dims: tuple[int, int, int, int] = (64, 128, 256, 256),
+        dropout: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 0.0),
         D_lr: float = 1e-4,
         G_lr: float = 4e-4,
         batch_size: int = 512,

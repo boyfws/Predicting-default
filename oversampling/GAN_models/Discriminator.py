@@ -5,33 +5,32 @@ import torch.nn as nn
 class Discriminator(nn.Module):
     def __init__(self,
                  input_dim: int,
-                 hidden_dims: tuple[int, int],
+                 hidden_dims: tuple[int, int, int, int],
                  leaky_relu_coef: float,
-                 dropout: tuple[float, float]
+                 dropout: tuple[float, float, float, float]
                  ):
         super().__init__()
-        layers = [
-            nn.utils.spectral_norm(nn.Linear(input_dim, hidden_dims[0]), n_power_iterations=1),
-            nn.LeakyReLU(leaky_relu_coef, inplace=True)
-        ]
-        if dropout[0] >= 1e-7:
-            layers += [
-                nn.Dropout(dropout[0])
-            ]
 
-        layers += [
+        self.net = nn.Sequential(
+            nn.utils.spectral_norm(nn.Linear(input_dim, hidden_dims[0]), n_power_iterations=1),
+            nn.LeakyReLU(leaky_relu_coef, inplace=True),
+            nn.Dropout(dropout[0]) if dropout[0] > 0 else nn.Identity(),
+
             nn.utils.spectral_norm(nn.Linear(hidden_dims[0], hidden_dims[1]), n_power_iterations=1),
             nn.LeakyReLU(leaky_relu_coef, inplace=True),
-        ]
+            nn.Dropout(dropout[1]) if dropout[1] > 0 else nn.Identity(),
 
-        if dropout[1] >= 1e-7:
-            layers += [nn.Dropout(dropout[1])]
+            nn.utils.spectral_norm(nn.Linear(hidden_dims[1], hidden_dims[2]), n_power_iterations=1),
+            nn.LeakyReLU(leaky_relu_coef, inplace=True),
+            nn.Dropout(dropout[2]) if dropout[2] > 0 else nn.Identity(),
 
-        layers += [
-            nn.utils.spectral_norm(nn.Linear(hidden_dims[1], 1), n_power_iterations=1)
-        ]
+            nn.utils.spectral_norm(nn.Linear(hidden_dims[2], hidden_dims[3]), n_power_iterations=1),
+            nn.LeakyReLU(leaky_relu_coef, inplace=True),
+            nn.Dropout(dropout[3]) if dropout[3] > 0 else nn.Identity(),
 
-        self.net = nn.Sequential(*layers)
+            nn.utils.spectral_norm(nn.Linear(hidden_dims[3], hidden_dims[1]), n_power_iterations=1),
+
+        )
         self._init_weights()
 
     def _init_weights(self):

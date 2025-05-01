@@ -28,7 +28,7 @@ class Discriminator(nn.Module):
             nn.LeakyReLU(leaky_relu_coef, inplace=True),
             nn.Dropout(dropout[3]) if dropout[3] > 0 else nn.Identity(),
 
-            nn.Linear(hidden_dims[3], hidden_dims[1]),
+            nn.Linear(hidden_dims[3], 1),
             nn.Sigmoid()
         )
         self._init_weights()

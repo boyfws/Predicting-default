@@ -14,7 +14,6 @@ class Generator(nn.Module):
         self.net = nn.Sequential(
             nn.Linear(latent_dim, hidden_dims[0]),
             nn.ReLU(inplace=True),
-            NoiseInjection(hidden_dims[0]),
 
             nn.Linear(hidden_dims[0], hidden_dims[1]),
             nn.ReLU(inplace=True),
@@ -22,7 +21,6 @@ class Generator(nn.Module):
 
             nn.Linear(hidden_dims[1], hidden_dims[2]),
             nn.ReLU(inplace=True),
-            NoiseInjection(hidden_dims[2]),
 
             nn.Linear(hidden_dims[2], hidden_dims[3]),
             nn.ReLU(inplace=True),

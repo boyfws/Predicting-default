@@ -12,7 +12,7 @@ class DataTransformer:
         self.min_max = {}
         self.types = {}
         self.apply_round = {}
-
+        self.masked_cols = []
         self.columns = []
 
         self.fitted = False
@@ -50,6 +50,7 @@ class DataTransformer:
                 mask = df[el].isna()
                 if mask.any():
                     df[f"{el}_mask"] = mask
+                    self.masked_cols.append(el)
 
                 if (df[el][~mask].round() == df[el][~mask]).fillna(False).all():
                     self.apply_round[el] = True
@@ -78,11 +79,11 @@ class DataTransformer:
         for el in df.columns:
             if is_numeric_dtype(df[el]) or is_bool_dtype(df[el]):
 
-                mask = df[el].isna()
-                if mask.any():
+                if el in self.masked_cols:
+                    mask = df[el].isna()
                     df[f"{el}_mask"] = mask
 
-                df[el] = df[el].fillna(0)
+                    df[el] = df[el].fillna(0)
 
             else:
                 df[el] = df[el].where(pd.notnull(df[el]), None)

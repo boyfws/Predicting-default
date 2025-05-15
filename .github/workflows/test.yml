@@ -2,7 +2,7 @@ name: Code-style-CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
     paths: [ '**' ]
   pull_request:
     paths: [ '**' ]

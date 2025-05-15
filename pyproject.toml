@@ -2,13 +2,13 @@
 line-length = 88
 select = ["E", "F", "W", "I", "PL", "RUF"]
 ignore = ["E203", "PLR0913"]
-exclude = ["__pycache__", ".git", "oversampling/tests"]
+exclude = ["__pycache__", ".git", "oversampling/tests", "**/*.ipynb"]
 
 [tool.black]
 line-length = 88
 target-version = ["py37", "py38", "py39", "py310"]
 exclude = '''
-/(\.venv|venv|\.idea|build|dist|__pycache__|oversampling[/\\]tests)/
+/(\.venv|venv|\.idea|build|dist|__pycache__|oversampling[/\\]tests|.*\.ipynb)/
 '''
 
 

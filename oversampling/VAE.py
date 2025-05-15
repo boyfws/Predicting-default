@@ -75,10 +75,11 @@ class VAEWrapper:
         logvar: torch.Tensor,
     ) -> torch.Tensor:
 
-        recon_loss = F.mse_loss(recon_x, x, reduction="mean")
+        recon_loss = F.mse_loss(recon_x, x, reduction="sum")
+        recon_loss = recon_loss / x.size(0)
 
-        kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-        kl_loss = kl_loss / x.size(0)
+        kl_per_sample = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), dim=1)  # [B]
+        kl_loss = torch.mean(kl_per_sample)
 
         return recon_loss + self.kl_weight * kl_loss
 

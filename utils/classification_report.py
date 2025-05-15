@@ -1,10 +1,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
 from joblib import Parallel, delayed
 from sklearn.calibration import calibration_curve
-from sklearn.metrics import (brier_score_loss, f1_score,
-                             precision_recall_curve, roc_auc_score)
+from sklearn.metrics import (
+    brier_score_loss,
+    f1_score,
+    precision_recall_curve,
+    roc_auc_score,
+)
 
 from .divergence_score import divergence_score
 
@@ -24,8 +27,8 @@ def classification_report(y_true, pred_prob, figsize: tuple[int, int] = (10, 10)
     print("-" * 50)
     print()
     precision, recall, thresholds = precision_recall_curve(y_true, pred_prob)
-
-    mask = (precision > 1e-3) * (recall > 1e-3)
+    THRESHOLD = 1e-3
+    mask = (precision > THRESHOLD) * (recall > THRESHOLD)
     plt.figure(figsize=figsize)
     plt.plot(precision[mask], recall[mask], label="PR-curve", linestyle="-")
     plt.ylabel("Recall (Share of defaults detected)")
@@ -59,7 +62,7 @@ def classification_report(y_true, pred_prob, figsize: tuple[int, int] = (10, 10)
 
     print()
     print("-" * 50)
-    print("Сalibration Curve")
+    print("Calibration Curve")
     print("-" * 50)
     print()
 

@@ -7,7 +7,15 @@ from rich.panel import Panel
 
 from binning import Binner
 from utils import Model
-from validation import *
+from validation import (
+    BinningTest,
+    CalibrationCurveTest,
+    FeatureGini,
+    FeatureGiniChangeTest,
+    GeneralGini,
+    GiniChangeTest,
+    TargetRateTest,
+)
 
 
 class Validator:
@@ -78,7 +86,7 @@ class Validator:
             n_jobs=self.n_jobs,
         )
 
-        names = np.array(list(coefs.keys()))
+        # names = np.array(list(coefs.keys()))
         coefs = np.array(list(coefs.values()))
 
         r, y, g = 0, 0, 0
@@ -97,7 +105,9 @@ class Validator:
             score = -1
             self.console.print(
                 Panel(
-                    f"[red]❌ Test failed with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/red]",
+                    "[red]❌ Test failed with red, yellow, green shares"
+                    + f"{(r / ryg_sum):.2f}, "
+                    + f"{(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/red]",
                     title=title,
                 )
             )
@@ -105,7 +115,9 @@ class Validator:
             score = 0
             self.console.print(
                 Panel(
-                    f"[yellow]⚠️ Intermediate result with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/yellow]",
+                    "[yellow]⚠️ Intermediate result with red, yellow, green shares "
+                    + f"{(r / ryg_sum):.2f}, "
+                    + f"{(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/yellow]",
                     title=title,
                 )
             )
@@ -113,7 +125,9 @@ class Validator:
             score = 1
             self.console.print(
                 Panel(
-                    f"[green]✅ Test passed with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/green]",
+                    "[green]✅ Test passed with red, yellow, green shares "
+                    + f"{(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, "
+                    + f"{(g / ryg_sum):.2f}[/green]",
                     title=title,
                 )
             )
@@ -167,7 +181,9 @@ class Validator:
             score = 0
             self.console.print(
                 Panel(
-                    f"[yellow]⚠️ Intermediate result with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/yellow]",
+                    "[yellow]⚠️ Intermediate result "
+                    + f"with red, yellow, green shares {(r / ryg_sum):.2f}, "
+                    + f"{(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/yellow]",
                     title=title,
                 )
             )
@@ -175,7 +191,9 @@ class Validator:
             score = 1
             self.console.print(
                 Panel(
-                    f"[green]✅ Test passed with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/green]",
+                    "[green]✅ Test passed with red, "
+                    + f"yellow, green shares {(r / ryg_sum):.2f}, "
+                    + f"{(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/green]",
                     title=title,
                 )
             )
@@ -206,7 +224,8 @@ class Validator:
             score = 0
             self.console.print(
                 Panel(
-                    f"[yellow]⚠️ Intermediate result with share {(coef * 100):.2f}%[/yellow]",
+                    "[yellow]⚠️ Intermediate result "
+                    + f"with share {(coef * 100):.2f}%[/yellow]",
                     title=title,
                 )
             )
@@ -241,16 +260,16 @@ class Validator:
         title = "Calibration Curve test"
         if share > 0.3:
             score = -1
-            self.console.print(Panel(f"[red]❌ Test failed[/red]", title=title))
+            self.console.print(Panel("[red]❌ Test failed[/red]", title=title))
 
         elif share > 0.15:
             score = 0
             self.console.print(
-                Panel(f"[yellow]⚠️ Intermediate result[/yellow]", title=title)
+                Panel("[yellow]⚠️ Intermediate result[/yellow]", title=title)
             )
         else:
             score = 1
-            self.console.print(Panel(f"[green]✅ Test passed[/green]", title=title))
+            self.console.print(Panel("[green]✅ Test passed[/green]", title=title))
 
         return score
 
@@ -275,7 +294,9 @@ class Validator:
             score = -1
             self.console.print(
                 Panel(
-                    f"[red]❌ Test failed with absolute and relative diffs: {-abs_diff:.2f} p.p and {-rel_diff:.2f}%[/red]",
+                    "[red]❌ Test failed with "
+                    + "absolute and relative diffs: "
+                    + f"{-abs_diff:.2f} p.p and {-rel_diff:.2f}%[/red]",
                     title=title,
                 )
             )
@@ -284,7 +305,9 @@ class Validator:
             score = 0
             self.console.print(
                 Panel(
-                    f"[yellow]⚠️ Intermediate result with absolute and relative diffs: {-abs_diff:.2f} p.p and {-rel_diff:.2f}%[/yellow]",
+                    "[yellow]⚠️ Intermediate result "
+                    + "with absolute and relative diffs: "
+                    + f"{-abs_diff:.2f} p.p and {-rel_diff:.2f}%[/yellow]",
                     title=title,
                 )
             )
@@ -292,7 +315,9 @@ class Validator:
             score = 1
             self.console.print(
                 Panel(
-                    f"[green]✅ Test passed with absolute and relative diffs: {-abs_diff:.2f} p.p and {-rel_diff:.2f}%[/green]",
+                    "[green]✅ Test passed with absolute "
+                    + "and relative diffs: "
+                    + f"{-abs_diff:.2f} p.p and {-rel_diff:.2f}%[/green]",
                     title=title,
                 )
             )
@@ -340,7 +365,9 @@ class Validator:
             score = -1
             self.console.print(
                 Panel(
-                    f"[red]❌ Test failed with {r_share:.2f} , {y_share:.2f} , {g_share:.2f} shares for red, yellow, green scores[/red]",
+                    "[red]❌ Test failed with "
+                    + f"{r_share:.2f} , {y_share:.2f} , {g_share:.2f} "
+                    + "shares for red, yellow, green scores[/red]",
                     title=title,
                 )
             )
@@ -349,7 +376,9 @@ class Validator:
             score = 0
             self.console.print(
                 Panel(
-                    f"[yellow]⚠️ Intermediate result with {r_share:.2f} , {y_share:.2f} , {g_share:.2f} shares for red, yellow, green scores[/yellow]",
+                    "[yellow]⚠️ Intermediate result with "
+                    + f"{r_share:.2f} , {y_share:.2f} , {g_share:.2f} "
+                    + "shares for red, yellow, green scores[/yellow]",
                     title=title,
                 )
             )
@@ -357,7 +386,9 @@ class Validator:
             score = 1
             self.console.print(
                 Panel(
-                    f"[green]✅ Test passed with {r_share:.2f} , {y_share:.2f} , {g_share:.2f} shares for red, yellow, green scores[/green]",
+                    "[green]✅ Test passed with "
+                    + f"{r_share:.2f} , {y_share:.2f} , {g_share:.2f} "
+                    + "shares for red, yellow, green scores[/green]",
                     title=title,
                 )
             )
@@ -367,11 +398,11 @@ class Validator:
     def _final_validation(self, scores: list[int]) -> None:
         title = "[bold]Final result[/bold]"
         if -1 in scores or scores.count(0) > 3:
-            self.console.print(Panel(f"[red]❌ Validation failed[/red]", title=title))
+            self.console.print(Panel("[red]❌ Validation failed[/red]", title=title))
 
         else:
             self.console.print(
-                Panel(f"[green]✅ Validation passed[/green]", title=title)
+                Panel("[green]✅ Validation passed[/green]", title=title)
             )
 
     def validate(

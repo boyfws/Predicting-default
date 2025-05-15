@@ -1,10 +1,10 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import scipy.stats as stats
 import seaborn as sns
+from scipy import stats
 
 
 class CalibrationCurveTest:
@@ -90,7 +90,7 @@ class CalibrationCurveTest:
             label="Actual rate",
             color="Blue",
             ax=ax,
-            **params
+            **params,
         )
         sns.pointplot(
             x=results["bucket"].astype(str),
@@ -98,7 +98,7 @@ class CalibrationCurveTest:
             label="Mean prob.",
             color="Red",
             ax=ax,
-            **params
+            **params,
         )
 
         plt.xticks(rotation=45)

@@ -1,8 +1,8 @@
 [tool.ruff]
 line-length = 88
 select = ["E", "F", "W", "I", "PL", "RUF"]
-ignore = ["E203", "PLR0913"]
-exclude = ["__pycache__", ".git", "oversampling/tests", "**/*.ipynb"]
+ignore = ["E203", "PLR0913", "PLR2004", "PLR0915"]
+exclude = ["__pycache__", ".git", "oversampling/tests/**", "**/*.ipynb"]
 
 [tool.black]
 line-length = 88

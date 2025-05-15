@@ -7,10 +7,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
 from numpy.typing import NDArray
+from torch import nn, optim
 from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 
@@ -189,17 +188,17 @@ class VAEWrapper:
 
         self.losses = np.zeros((self.epochs,), dtype=np.float64)
 
+        epoch_len = len(str(self.epochs))
         for epoch in range(self.epochs):
             epoch_loss = []
             pbar = tqdm(
                 loader,
-                desc=f"Epoch {str(epoch + 1).rjust(len(str(self.epochs)))}/{self.epochs}",
+                desc=f"Epoch {str(epoch + 1).rjust(epoch_len)}/{self.epochs}",
                 file=sys.stdout,
                 leave=True,
             )
             for i, (real_batch,) in enumerate(pbar):
-                real_batch = real_batch.to(self.device)
-                bs = real_batch.size(0)
+                real_batch = real_batch.to(self.device)  # noqa: PLW2901
 
                 self.optim.zero_grad()
 

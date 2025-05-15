@@ -15,7 +15,7 @@ class BinningTest:
         )
         filtered_data = table[mask]
 
-        bars = sns.barplot(
+        sns.barplot(
             x=filtered_data["Bin"],
             y=filtered_data["Count (%)"],
             color="magenta",
@@ -26,7 +26,7 @@ class BinningTest:
         ax.set_xticklabels(filtered_data["Bin"], rotation=45, size=7, ha="right")
 
         ax2 = ax.twinx()
-        line = sns.lineplot(
+        sns.lineplot(
             x=np.arange(len(filtered_data)),
             y=filtered_data["Event rate"],
             color="black",
@@ -82,9 +82,9 @@ class BinningTest:
     ) -> dict[str, dict[str, np.ndarray]]:
         figsize = tuple(int(el * 1.5) for el in figsize)
         num_columns = []
-        for el in binners:
-            if binners[el].dtype == "numerical":
-                num_columns.append(el)
+        for key, value in binners.items():
+            if value.dtype == "numerical":
+                num_columns.append(key)
 
         result_dict = {}
 

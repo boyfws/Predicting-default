@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.stats as stats
+from scipy import stats
 
 
 class TargetRateTest:
@@ -43,7 +43,7 @@ class TargetRateTest:
             fmt="o",
             label="0.95 confidence interval",
             color="green",
-            **ext_params
+            **ext_params,
         )
         plt.errorbar(
             [1],
@@ -52,7 +52,7 @@ class TargetRateTest:
             fmt="o",
             label="Predicted PD + 0.99 confidence interval ",
             color="blue",
-            **ext_params
+            **ext_params,
         )
         plt.plot([1], [actual_rate_pct], "o", color="red", label="Observed target rate")
         plt.xticks([])

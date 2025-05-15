@@ -79,8 +79,7 @@ class VAEWrapper:
         recon_loss = recon_loss / x.size(0)
 
         kl_per_sample = -0.5 * torch.sum(
-            1 + logvar - mu.pow(2) - logvar.exp(),
-            dim=1
+            1 + logvar - mu.pow(2) - logvar.exp(), dim=1
         )  # [B]
         kl_loss = torch.mean(kl_per_sample)
 
@@ -246,7 +245,7 @@ class VAEWrapper:
         with torch.no_grad():
 
             return self.model.to_latent(
-                self.data_transformer.transform(X),
+                self.data_transformer.transform(X).to(self.device),
             ).cpu()
 
     def from_latent(

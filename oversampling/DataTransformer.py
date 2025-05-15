@@ -180,6 +180,7 @@ class DataTransformer:
             "types": {col: str(dtype) for col, dtype in self.types.items()},
             "columns": self.columns.tolist(),
             "apply_round": self.apply_round,
+            "masked_cols": self.masked_cols,
         }
 
     @classmethod
@@ -214,7 +215,7 @@ class DataTransformer:
         self.columns = pd.Index(params["columns"])
 
         self.apply_round = params["apply_round"]
-
+        self.masked_cols = params["masked_cols"]
         self.fitted = True
 
         return self

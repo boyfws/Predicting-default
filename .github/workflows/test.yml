@@ -1,0 +1,33 @@
+name: Code-style-CI
+
+on:
+  push:
+    branches: [ master ]
+    paths: [ '**' ]
+  pull_request:
+    paths: [ '**' ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt \
+                      ruff black -q
+
+      - name: Run ruff
+        run: ruff check . --exit-non-zero-on-fix
+
+      - name: Run black
+        run: black . --check --diff

@@ -1,23 +1,15 @@
-from sklearn.metrics import (
-    precision_recall_curve,
-    roc_auc_score,
-    brier_score_loss,
-    f1_score
-)
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+from joblib import Parallel, delayed
 from sklearn.calibration import calibration_curve
+from sklearn.metrics import (brier_score_loss, f1_score,
+                             precision_recall_curve, roc_auc_score)
+
 from .divergence_score import divergence_score
 
-import matplotlib.pyplot as plt
-import seaborn as sns
 
-import numpy as np
-from joblib import Parallel, delayed
-
-
-def classification_report(y_true,
-                          pred_prob,
-                          figsize: tuple[int, int] = (10, 10)
-                          ):
+def classification_report(y_true, pred_prob, figsize: tuple[int, int] = (10, 10)):
     print("-" * 50)
     print("Metrics")
     print("-" * 50)
@@ -35,10 +27,10 @@ def classification_report(y_true,
 
     mask = (precision > 1e-3) * (recall > 1e-3)
     plt.figure(figsize=figsize)
-    plt.plot(precision[mask], recall[mask], label='PR-curve', linestyle='-')
-    plt.ylabel('Recall (Share of defaults detected)')
-    plt.xlabel('Precision (Share of predictions that were correct)')
-    plt.title('Precision-Recall Curve')
+    plt.plot(precision[mask], recall[mask], label="PR-curve", linestyle="-")
+    plt.ylabel("Recall (Share of defaults detected)")
+    plt.xlabel("Precision (Share of predictions that were correct)")
+    plt.title("Precision-Recall Curve")
     plt.grid()
     plt.legend()
     plt.show()
@@ -57,10 +49,10 @@ def classification_report(y_true,
     )
 
     plt.figure(figsize=figsize)
-    plt.plot(thresholds, f1_scores, linestyle='-', label='F1-Score')
-    plt.xlabel('Threshold')
-    plt.ylabel('F1-Score (Class 1)')
-    plt.title('F1-Score vs. Threshold')
+    plt.plot(thresholds, f1_scores, linestyle="-", label="F1-Score")
+    plt.xlabel("Threshold")
+    plt.ylabel("F1-Score (Class 1)")
+    plt.title("F1-Score vs. Threshold")
     plt.grid(True)
     plt.legend()
     plt.show()
@@ -71,16 +63,16 @@ def classification_report(y_true,
     print("-" * 50)
     print()
 
-    freq_true, freq_pred = calibration_curve(y_true, pred_prob, n_bins=10, strategy='uniform')
+    freq_true, freq_pred = calibration_curve(
+        y_true, pred_prob, n_bins=10, strategy="uniform"
+    )
 
     plt.figure(figsize=figsize)
-    plt.plot(freq_pred, freq_true, marker='o', label='Модель')
-    plt.plot([0, 1], [0, 1], linestyle='--', label='Perfect calibration', color='red')
-    plt.xlabel('Predicted probability')
-    plt.ylabel('Actual share of positive classes')
-    plt.title('Calibration Curve')
+    plt.plot(freq_pred, freq_true, marker="o", label="Модель")
+    plt.plot([0, 1], [0, 1], linestyle="--", label="Perfect calibration", color="red")
+    plt.xlabel("Predicted probability")
+    plt.ylabel("Actual share of positive classes")
+    plt.title("Calibration Curve")
     plt.legend()
     plt.grid()
     plt.show()
-
-

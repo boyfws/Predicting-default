@@ -1,30 +1,35 @@
-import pytest
-
-import torch
-import pandas as pd
-import numpy as np
 import json
+
+import numpy as np
+import pandas as pd
+import pytest
+import torch
+
 from oversampling.DataTransformer import DataTransformer
 
-test_data = pd.DataFrame({
-    'numeric': [1.5, np.nan, 3.0, 4.2, -1.8], # numeric
-    'categorical': ['apple', 'banana', None, 'apple', 'cherry'], # obj
-    'binary': [True, False, True, None, False], # obj
-    "binary2" : [True, False, True, True, False], # bool
-    'categorical2': ['apple', 'banana', "cherry", 'apple', 'cherry'], # obj
-})
+test_data = pd.DataFrame(
+    {
+        "numeric": [1.5, np.nan, 3.0, 4.2, -1.8],  # numeric
+        "categorical": ["apple", "banana", None, "apple", "cherry"],  # obj
+        "binary": [True, False, True, None, False],  # obj
+        "binary2": [True, False, True, True, False],  # bool
+        "categorical2": ["apple", "banana", "cherry", "apple", "cherry"],  # obj
+    }
+)
 
 
 def test_not_fitted_call1():
     with pytest.raises(RuntimeError) as e:
         transformer = DataTransformer().inverse_transform(torch.Tensor([[1, 1]]))
-    assert str(e.value) == 'fit_transform method must be called before inverse_transform'
+    assert (
+        str(e.value) == "fit_transform method must be called before inverse_transform"
+    )
 
 
 def test_not_fitted_call2():
     with pytest.raises(RuntimeError) as e:
         transformer = DataTransformer().get_params()
-    assert str(e.value) == 'fit_transform method must be called before get_params'
+    assert str(e.value) == "fit_transform method must be called before get_params"
 
 
 def test_output_type():
@@ -54,7 +59,7 @@ def test_inverse_transform():
         inverse_transformed_tensor,
         check_dtype=True,
         check_exact=False,
-        atol=1e-3
+        atol=1e-3,
     )
 
 
@@ -63,11 +68,11 @@ def test_data_transformer_serialization_structure():
     transformer.fit_transform(test_data)
     state = transformer.get_params()
 
-    assert 'final_scaler' in state
-    assert 'encoders' in state
-    assert 'min_max' in state
-    assert 'types' in state
-    assert 'columns' in state
+    assert "final_scaler" in state
+    assert "encoders" in state
+    assert "min_max" in state
+    assert "types" in state
+    assert "columns" in state
     assert "apply_round" in state
 
     json_state = json.dumps(state, indent=2)
@@ -103,21 +108,17 @@ def test_data_transformer_serialization_load_inverse():
     reconstructed_data = loaded_transformer.inverse_transform(transformed_tensor)
 
     pd.testing.assert_frame_equal(
-        test_data,
-        reconstructed_data,
-        check_dtype=True,
-        check_exact=False,
-        atol=1e-3
+        test_data, reconstructed_data, check_dtype=True, check_exact=False, atol=1e-3
     )
 
-    assert reconstructed_data['numeric'].isna().sum() == 1
-    assert reconstructed_data['categorical'].isna().sum() == 1
-    assert reconstructed_data['binary'].isna().sum() == 1
+    assert reconstructed_data["numeric"].isna().sum() == 1
+    assert reconstructed_data["categorical"].isna().sum() == 1
+    assert reconstructed_data["binary"].isna().sum() == 1
 
-    assert reconstructed_data['numeric'].dtype == np.float64
-    assert pd.api.types.is_object_dtype(reconstructed_data['categorical'])
-    assert pd.api.types.is_object_dtype(reconstructed_data['binary'])
-    assert pd.api.types.is_bool_dtype(reconstructed_data['binary2'])
+    assert reconstructed_data["numeric"].dtype == np.float64
+    assert pd.api.types.is_object_dtype(reconstructed_data["categorical"])
+    assert pd.api.types.is_object_dtype(reconstructed_data["binary"])
+    assert pd.api.types.is_bool_dtype(reconstructed_data["binary2"])
 
 
 def test_edge_cases_empty_df():
@@ -125,11 +126,11 @@ def test_edge_cases_empty_df():
     transformer = DataTransformer()
     with pytest.raises(RuntimeError) as e:
         transformer.fit_transform(empty_data)
-    assert str(e.value) == 'DataFrame is empty'
+    assert str(e.value) == "DataFrame is empty"
 
 
 def test_edge_cases_singe_column():
-    single_col_data = pd.DataFrame({'test': [1, 2, 3]})
+    single_col_data = pd.DataFrame({"test": [1, 2, 3]})
 
     transformer = DataTransformer()
     transformed = transformer.fit_transform(single_col_data)
@@ -141,20 +142,16 @@ def test_edge_cases_singe_column():
 
 
 def test_edge_cases_extreme_values():
-    extreme_data = pd.DataFrame({
-        'values': [np.nan, np.inf, -np.inf, 1e18]
-    })
+    extreme_data = pd.DataFrame({"values": [np.nan, np.inf, -np.inf, 1e18]})
     transformer = DataTransformer()
     with pytest.raises(RuntimeError) as e:
         transformer.fit_transform(extreme_data)
 
-    assert str(e.value) == 'DataFrame is infinite'
+    assert str(e.value) == "DataFrame is infinite"
 
 
 def test_int_cols_with_na():
-    data = pd.DataFrame({
-        "col": [1, 2, 3, None]
-    })
+    data = pd.DataFrame({"col": [1, 2, 3, None]})
 
     transformer = DataTransformer()
     transformed = transformer.fit_transform(data)

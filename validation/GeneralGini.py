@@ -1,17 +1,17 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 class GeneralGini:
-    """"
+    """ "
     Calculates the CAP curve
     (Cumulative Accuracy Profile)
     and calculates the gini coefficient from it
     """
+
     @staticmethod
     def CAP_curve(
-            y_true: np.ndarray,
-            y_pred: np.ndarray
+        y_true: np.ndarray, y_pred: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray]:
         sorted_idx = np.argsort(y_pred)[::-1]
         y_true = y_true[sorted_idx]
@@ -22,12 +22,8 @@ class GeneralGini:
         return x, y
 
     @staticmethod
-    def gini_value(
-            y: np.ndarray,
-            x: np.ndarray
-    ) -> float:
+    def gini_value(y: np.ndarray, x: np.ndarray) -> float:
         return 2 * np.trapz(y, x) - 1
-
 
     @staticmethod
     def plot_CAP(
@@ -39,16 +35,17 @@ class GeneralGini:
         plt.title("Cumulative Accuracy Profile for model")
         plt.plot(x, y, label="CAP curve")
         plt.plot(x, x, label="Random model")
-        plt.fill_between(x, y, x, color='gray', alpha=0.3)
+        plt.fill_between(x, y, x, color="gray", alpha=0.3)
         plt.legend()
         plt.show()
 
-    def __call__(self,
-                 y_true: np.ndarray,
-                 y_pred: np.ndarray,
-                 plot: bool = False,
-                 figsize: tuple[int, int] = (10, 10),
-                 ) -> float:
+    def __call__(
+        self,
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        plot: bool = False,
+        figsize: tuple[int, int] = (10, 10),
+    ) -> float:
         x, y = self.CAP_curve(y_true, y_pred)
         coef = self.gini_value(y, x)
 
@@ -56,5 +53,3 @@ class GeneralGini:
             self.plot_CAP(y, x, figsize=figsize)
 
         return coef
-
-

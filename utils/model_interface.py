@@ -1,16 +1,14 @@
 from abc import ABC, abstractmethod
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 
 
 class Model(ABC):
     """Interface for logistic regression classes"""
 
     @abstractmethod
-    def fit(self,
-            X: pd.DataFrame,
-            y: pd.Series
-            ) -> None:
+    def fit(self, X: pd.DataFrame, y: pd.Series) -> None:
         """
         Training the model on the data
 
@@ -21,10 +19,7 @@ class Model(ABC):
         pass
 
     @abstractmethod
-    def predict_proba(
-            self,
-            X: pd.DataFrame
-    ) -> np.ndarray:
+    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
         """
         Predicting class probabilities
 

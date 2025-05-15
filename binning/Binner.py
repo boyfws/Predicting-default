@@ -1,22 +1,19 @@
-from sklearn.base import TransformerMixin
-from optbinning import OptimalBinning
-
-import numpy as np
-import pandas as pd
+from typing import Union
 
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import seaborn as sns
-
 from joblib import Parallel, delayed
-
-from typing import  Union
+from optbinning import OptimalBinning
+from sklearn.base import TransformerMixin
 
 
 class Binner(TransformerMixin):
     def __init__(
-            self,
-            params: dict[str, dict],
-            n_jobs: int = -1,
+        self,
+        params: dict[str, dict],
+        n_jobs: int = -1,
     ):
         self.params = params
         self.n_jobs = n_jobs
@@ -44,21 +41,14 @@ class Binner(TransformerMixin):
         self.optb_ = {el: optb for el, optb, iv in results}
         self.iv_ = {el: iv for el, optb, iv in results}
 
-    def transform(
-            self,
-            X: pd.DataFrame
-    ) -> pd.DataFrame:
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         X = X.copy()
         for el in self.optb_:
             X[el] = self.optb_[el].transform(X[el])
 
         return X.astype(np.float32)
 
-    def fit_transform(
-            self,
-            X: pd.DataFrame,
-            y: pd.Series
-    ) -> pd.DataFrame:
+    def fit_transform(self, X: pd.DataFrame, y: pd.Series) -> pd.DataFrame:
         self.fit(X, y)
         return self.transform(X)
 

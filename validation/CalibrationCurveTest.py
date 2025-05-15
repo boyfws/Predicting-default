@@ -1,20 +1,21 @@
+from typing import Dict, List, Optional, Tuple
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 import scipy.stats as stats
-from typing import Optional, Dict, List, Tuple
+import seaborn as sns
 
 
 class CalibrationCurveTest:
     def __call__(
-            self,
-            predicted_probs: np.ndarray,
-            actual_events: np.ndarray,
-            n_buckets: int = 5,
-            strategy: str = 'quantile',
-            plot: bool = True,
-            figsize: Tuple[int, int] = (12, 6),
+        self,
+        predicted_probs: np.ndarray,
+        actual_events: np.ndarray,
+        n_buckets: int = 5,
+        strategy: str = "quantile",
+        plot: bool = True,
+        figsize: Tuple[int, int] = (12, 6),
     ) -> pd.DataFrame:
         df = self._create_buckets(predicted_probs, actual_events, n_buckets, strategy)
 
@@ -27,17 +28,14 @@ class CalibrationCurveTest:
 
     @staticmethod
     def _create_buckets(
-            probs: np.ndarray,
-            events: np.ndarray,
-            n_buckets: int,
-            strategy: str
+        probs: np.ndarray, events: np.ndarray, n_buckets: int, strategy: str
     ) -> pd.DataFrame:
-        if strategy == 'quantile':
-            df = pd.DataFrame({'prob': probs, 'event': events})
-            df['bucket'] = pd.qcut(probs, q=n_buckets, duplicates='drop')
-        elif strategy == 'uniform':
-            df = pd.DataFrame({'prob': probs, 'event': events})
-            df['bucket'] = pd.cut(probs, bins=n_buckets)
+        if strategy == "quantile":
+            df = pd.DataFrame({"prob": probs, "event": events})
+            df["bucket"] = pd.qcut(probs, q=n_buckets, duplicates="drop")
+        elif strategy == "uniform":
+            df = pd.DataFrame({"prob": probs, "event": events})
+            df["bucket"] = pd.cut(probs, bins=n_buckets)
         else:
             raise ValueError("Strategy must be 'quantile' or 'uniform'")
 
@@ -46,38 +44,38 @@ class CalibrationCurveTest:
     @staticmethod
     def _compute_metrics(df: pd.DataFrame) -> pd.DataFrame:
         results = (
-            df.groupby('bucket', observed=True)
+            df.groupby("bucket", observed=True)
             .agg(
-                mean_prob=('prob', 'mean'),
-                actual_rate=('event', 'mean'),
-                n_obs=('event', 'count')
+                mean_prob=("prob", "mean"),
+                actual_rate=("event", "mean"),
+                n_obs=("event", "count"),
             )
             .reset_index()
         )
 
-        results['ci_95_lower'], results['ci_95_upper'] = zip(
+        results["ci_95_lower"], results["ci_95_upper"] = zip(
             *results.apply(CalibrationCurveTest._calc_ci, axis=1, ci_level=0.95)
         )
-        results['ci_99_lower'], results['ci_99_upper'] = zip(
+        results["ci_99_lower"], results["ci_99_upper"] = zip(
             *results.apply(CalibrationCurveTest._calc_ci, axis=1, ci_level=0.99)
         )
 
-        total = results['n_obs'].sum()
-        results['bucket_share'] = results['n_obs'] / total
+        total = results["n_obs"].sum()
+        results["bucket_share"] = results["n_obs"] / total
 
         return results
 
     @staticmethod
     def _calc_ci(row: pd.Series, ci_level: float) -> Tuple[float, float]:
-        n = row['n_obs']
-        p = row['mean_prob']
+        n = row["n_obs"]
+        p = row["mean_prob"]
         std_err = np.sqrt(p * (1 - p) / n)
         return stats.norm.interval(ci_level, loc=p, scale=std_err)
 
     @staticmethod
     def _plot_validation(
-            results: pd.DataFrame,
-            figsize: Tuple[int, int],
+        results: pd.DataFrame,
+        figsize: Tuple[int, int],
     ) -> None:
         params = dict(
             # join=False,
@@ -107,12 +105,12 @@ class CalibrationCurveTest:
         ax2 = ax.twinx()
         sns.barplot(
             data=results,
-            x='bucket',
-            y='bucket_share',
+            x="bucket",
+            y="bucket_share",
             alpha=0.2,
-            color='gray',
+            color="gray",
             ax=ax2,
-            label='Bucket Share'
+            label="Bucket Share",
         )
 
         handles1, labels1 = ax.get_legend_handles_labels()
@@ -123,4 +121,3 @@ class CalibrationCurveTest:
             # loc='upper right'
         )
         plt.show()
-

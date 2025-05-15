@@ -1,24 +1,23 @@
-from validation import *
-from binning import Binner
-from utils import Model
+from typing import Optional, Union
 
-import pandas as pd
 import numpy as np
-
+import pandas as pd
 from rich.console import Console
 from rich.panel import Panel
 
-from typing import Optional, Union
+from binning import Binner
+from utils import Model
+from validation import *
 
 
 class Validator:
     console: Console
 
     def __init__(
-            self,
-            plot_graphs: bool = True,
-            figsize: tuple[int, int] = (10, 10),
-            n_jobs: int = -1,
+        self,
+        plot_graphs: bool = True,
+        figsize: tuple[int, int] = (10, 10),
+        n_jobs: int = -1,
     ) -> None:
         self.general_gini = GeneralGini()
         self.feature_gini = FeatureGini()
@@ -35,10 +34,7 @@ class Validator:
 
         self.console = Console()
 
-    def _validate_gini(self,
-                       y_true: np.ndarray,
-                       y_pred: np.ndarray
-                       ) -> int:
+    def _validate_gini(self, y_true: np.ndarray, y_pred: np.ndarray) -> int:
         gen_gini = self.general_gini(
             y_true,
             y_pred,
@@ -48,21 +44,32 @@ class Validator:
         title = "General Gini test"
         if gen_gini <= 0.25:
             score = -1
-            self.console.print(Panel(f"[red]❌ Test failed with gini {gen_gini:.2f}[/red]", title=title))
+            self.console.print(
+                Panel(
+                    f"[red]❌ Test failed with gini {gen_gini:.2f}[/red]", title=title
+                )
+            )
 
         elif gen_gini <= 0.35:
             score = 0
-            self.console.print(Panel(f"[yellow]⚠️ Intermediate result with gini {gen_gini:.2f}[/yellow]", title=title))
+            self.console.print(
+                Panel(
+                    f"[yellow]⚠️ Intermediate result with gini {gen_gini:.2f}[/yellow]",
+                    title=title,
+                )
+            )
         else:
             score = 1
-            self.console.print(Panel(f"[green]✅ Test passed with gini {gen_gini:.2f}[/green]", title=title))
+            self.console.print(
+                Panel(
+                    f"[green]✅ Test passed with gini {gen_gini:.2f}[/green]",
+                    title=title,
+                )
+            )
 
         return score
 
-    def _validate_features_gini(self,
-                               X_orig: pd.DataFrame,
-                               y_true: np.ndarray
-                               ) -> int:
+    def _validate_features_gini(self, X_orig: pd.DataFrame, y_true: np.ndarray) -> int:
         coefs = self.feature_gini(
             X_orig,
             y_true,
@@ -91,14 +98,15 @@ class Validator:
             self.console.print(
                 Panel(
                     f"[red]❌ Test failed with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/red]",
-                    title=title)
+                    title=title,
+                )
             )
         elif (y / ryg_sum) > 0.1:
             score = 0
             self.console.print(
                 Panel(
                     f"[yellow]⚠️ Intermediate result with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/yellow]",
-                    title=title
+                    title=title,
                 )
             )
         else:
@@ -106,16 +114,13 @@ class Validator:
             self.console.print(
                 Panel(
                     f"[green]✅ Test passed with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/green]",
-                    title=title
+                    title=title,
                 )
             )
 
         return score
 
-    def _validate_binning(
-            self,
-            binner: Binner
-    ) -> int:
+    def _validate_binning(self, binner: Binner) -> int:
         results = self.binner_test(
             binner.optb_,
             plot=self.plot_graphs,
@@ -141,9 +146,7 @@ class Validator:
 
             if np.any(count_mask * diff_mask):
                 r += 1
-            elif np.any(
-                count_mask != diff_mask
-            ):
+            elif np.any(count_mask != diff_mask):
                 y += 1
             else:
                 g += 1
@@ -156,7 +159,7 @@ class Validator:
             self.console.print(
                 Panel(
                     f"[red]❌ Test failed with red share {(r / ryg_sum):.2f}[/red]",
-                    title=title
+                    title=title,
                 )
             )
 
@@ -165,28 +168,29 @@ class Validator:
             self.console.print(
                 Panel(
                     f"[yellow]⚠️ Intermediate result with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/yellow]",
-                    title=title
+                    title=title,
                 )
             )
         else:
             score = 1
-            self.console.print(Panel(f"[green]✅ Test passed with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/green]", title=title))
+            self.console.print(
+                Panel(
+                    f"[green]✅ Test passed with red, yellow, green shares {(r / ryg_sum):.2f}, {(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/green]",
+                    title=title,
+                )
+            )
 
         return score
 
-    def _validate_target_rate(
-            self,
-            pred_p: np.ndarray,
-            y_true: np.ndarray
-    ) -> int:
+    def _validate_target_rate(self, pred_p: np.ndarray, y_true: np.ndarray) -> int:
         results = self.target_rate_test(
-            pred_p,
-            y_true,
-            plot=self.plot_graphs,
-            figsize=self.figsize
+            pred_p, y_true, plot=self.plot_graphs, figsize=self.figsize
         )
 
-        coef = np.abs(results["actual_event_rate"] - results["mean_predicted_probability"]) / results["actual_event_rate"]
+        coef = (
+            np.abs(results["actual_event_rate"] - results["mean_predicted_probability"])
+            / results["actual_event_rate"]
+        )
 
         title = "Target Rate test"
         if coef > 0.2:
@@ -194,7 +198,7 @@ class Validator:
             self.console.print(
                 Panel(
                     f"[red]❌ Test failed with share {(coef * 100):.2f}%[/red]",
-                    title=title
+                    title=title,
                 )
             )
 
@@ -203,19 +207,21 @@ class Validator:
             self.console.print(
                 Panel(
                     f"[yellow]⚠️ Intermediate result with share {(coef * 100):.2f}%[/yellow]",
-                    title=title
+                    title=title,
                 )
             )
         else:
             score = 1
-            self.console.print(Panel(f"[green]✅ Test passed with share {(coef * 100):.2f}%[/green]", title=title))
+            self.console.print(
+                Panel(
+                    f"[green]✅ Test passed with share {(coef * 100):.2f}%[/green]",
+                    title=title,
+                )
+            )
 
         return score
 
-    def _validate_curve_test(self,
-                             pred_p: np.ndarray,
-                             y_true: np.ndarray
-                            ) -> int:
+    def _validate_curve_test(self, pred_p: np.ndarray, y_true: np.ndarray) -> int:
 
         result_df = self.calibration_curve_test(
             pred_p,
@@ -235,38 +241,26 @@ class Validator:
         title = "Calibration Curve test"
         if share > 0.3:
             score = -1
-            self.console.print(
-                Panel(
-                    f"[red]❌ Test failed[/red]",
-                    title=title
-                )
-            )
+            self.console.print(Panel(f"[red]❌ Test failed[/red]", title=title))
 
         elif share > 0.15:
             score = 0
             self.console.print(
-                Panel(
-                    f"[yellow]⚠️ Intermediate result[/yellow]",
-                    title=title
-                )
+                Panel(f"[yellow]⚠️ Intermediate result[/yellow]", title=title)
             )
         else:
             score = 1
-            self.console.print(
-                Panel(
-                    f"[green]✅ Test passed[/green]",
-                    title=title
-                )
-            )
+            self.console.print(Panel(f"[green]✅ Test passed[/green]", title=title))
 
         return score
 
-    def _validate_gini_change(self,
-                              y_train: np.ndarray,
-                              y_test: np.ndarray,
-                              y_pred_train: np.ndarray,
-                              y_pred_test: np.ndarray,
-                              ):
+    def _validate_gini_change(
+        self,
+        y_train: np.ndarray,
+        y_test: np.ndarray,
+        y_pred_train: np.ndarray,
+        y_pred_test: np.ndarray,
+    ):
         abs_diff, rel_diff = self.gini_change_test(
             y_train,
             y_test,
@@ -282,7 +276,7 @@ class Validator:
             self.console.print(
                 Panel(
                     f"[red]❌ Test failed with absolute and relative diffs: {-abs_diff:.2f} p.p and {-rel_diff:.2f}%[/red]",
-                    title=title
+                    title=title,
                 )
             )
 
@@ -291,7 +285,7 @@ class Validator:
             self.console.print(
                 Panel(
                     f"[yellow]⚠️ Intermediate result with absolute and relative diffs: {-abs_diff:.2f} p.p and {-rel_diff:.2f}%[/yellow]",
-                    title=title
+                    title=title,
                 )
             )
         else:
@@ -299,18 +293,18 @@ class Validator:
             self.console.print(
                 Panel(
                     f"[green]✅ Test passed with absolute and relative diffs: {-abs_diff:.2f} p.p and {-rel_diff:.2f}%[/green]",
-                    title=title
+                    title=title,
                 )
             )
 
         return score
 
     def _validate_features_gini_change_test(
-            self,
-            X_train: pd.DataFrame,
-            y_train: np.ndarray,
-            X_test: pd.DataFrame,
-            y_test: np.ndarray,
+        self,
+        X_train: pd.DataFrame,
+        y_train: np.ndarray,
+        X_test: pd.DataFrame,
+        y_test: np.ndarray,
     ) -> int:
         result_train, result_test = self.feature_gini_change_test(
             X_train,
@@ -347,7 +341,7 @@ class Validator:
             self.console.print(
                 Panel(
                     f"[red]❌ Test failed with {r_share:.2f} , {y_share:.2f} , {g_share:.2f} shares for red, yellow, green scores[/red]",
-                    title=title
+                    title=title,
                 )
             )
 
@@ -356,7 +350,7 @@ class Validator:
             self.console.print(
                 Panel(
                     f"[yellow]⚠️ Intermediate result with {r_share:.2f} , {y_share:.2f} , {g_share:.2f} shares for red, yellow, green scores[/yellow]",
-                    title=title
+                    title=title,
                 )
             )
         else:
@@ -364,7 +358,7 @@ class Validator:
             self.console.print(
                 Panel(
                     f"[green]✅ Test passed with {r_share:.2f} , {y_share:.2f} , {g_share:.2f} shares for red, yellow, green scores[/green]",
-                    title=title
+                    title=title,
                 )
             )
 
@@ -373,28 +367,20 @@ class Validator:
     def _final_validation(self, scores: list[int]) -> None:
         title = "[bold]Final result[/bold]"
         if -1 in scores or scores.count(0) > 3:
-            self.console.print(
-                Panel(
-                    f"[red]❌ Validation failed[/red]",
-                    title=title
-                )
-            )
+            self.console.print(Panel(f"[red]❌ Validation failed[/red]", title=title))
 
         else:
             self.console.print(
-                Panel(
-                    f"[green]✅ Validation passed[/green]",
-                    title=title
-                )
+                Panel(f"[green]✅ Validation passed[/green]", title=title)
             )
 
     def validate(
-            self,
-            X: pd.DataFrame,
-            y: Union[pd.Series, np.ndarray],
-            model: Model,
-            train_data: tuple[pd.DataFrame, Union[pd.Series, np.ndarray]],
-            binner: Optional[Binner] = None,
+        self,
+        X: pd.DataFrame,
+        y: Union[pd.Series, np.ndarray],
+        model: Model,
+        train_data: tuple[pd.DataFrame, Union[pd.Series, np.ndarray]],
+        binner: Optional[Binner] = None,
     ) -> None:
         if binner is None:
             y_pred_test = model.predict_proba(X)
@@ -426,7 +412,9 @@ class Validator:
 
         score1 = self._validate_gini(y_test_np, y_pred_test)
         scores.append(score1)
-        score2 = self._validate_features_gini(X.select_dtypes(include="number"), y_test_np)
+        score2 = self._validate_features_gini(
+            X.select_dtypes(include="number"), y_test_np
+        )
         scores.append(score2)
 
         if binner is not None:
@@ -437,7 +425,9 @@ class Validator:
         scores.append(score4)
         score5 = self._validate_curve_test(y_pred_test, y_test_np)
         scores.append(score5)
-        score6 = self._validate_gini_change(y_train_np, y_test_np, y_pred_train, y_pred_test)
+        score6 = self._validate_gini_change(
+            y_train_np, y_test_np, y_pred_train, y_pred_test
+        )
         scores.append(score6)
         score7 = self._validate_features_gini_change_test(
             train_data[0].select_dtypes(include="number"),
@@ -448,5 +438,3 @@ class Validator:
         scores.append(score7)
 
         self._final_validation(scores)
-
-

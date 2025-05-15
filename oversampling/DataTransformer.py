@@ -1,9 +1,8 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 import torch
-
-from pandas.api.types import is_numeric_dtype, is_bool_dtype
-from sklearn.preprocessing import OrdinalEncoder, MinMaxScaler
+from pandas.api.types import is_bool_dtype, is_numeric_dtype
+from sklearn.preprocessing import MinMaxScaler, OrdinalEncoder
 
 
 class DataTransformer:
@@ -29,15 +28,16 @@ class DataTransformer:
 
         return uniq_list
 
-    def fit_transform(
-            self,
-            df: pd.DataFrame
-    ) -> torch.Tensor:
+    @staticmethod
+    def _check_df(df: pd.DataFrame) -> pd.DataFrame:
         if df.empty:
-            raise RuntimeError('DataFrame is empty')
+            raise RuntimeError("DataFrame is empty")
 
         if df.select_dtypes(include="number").map(np.isinf).any(axis=None):
-            raise RuntimeError('DataFrame is infinite')
+            raise RuntimeError("DataFrame is infinite")
+
+    def fit(self, df: pd.DataFrame) -> None:
+        self._check_df(df)
 
         df = df.copy()
 
@@ -51,38 +51,60 @@ class DataTransformer:
                 if mask.any():
                     df[f"{el}_mask"] = mask
 
-                if (
-                        df[el][~mask].round() == df[el][~mask]
-                ).fillna(False).all():
+                if (df[el][~mask].round() == df[el][~mask]).fillna(False).all():
                     self.apply_round[el] = True
+
+            else:
+                self.encoders[el] = OrdinalEncoder(
+                    categories=[self._get_unique_vals(df[el])], encoded_missing_value=-1
+                )
+                transformed = self.encoders[el].fit_transform(
+                    df[el].where(pd.notnull(df[el]), None).to_numpy().reshape(-1, 1)
+                )
+
+                df[el] = transformed
+                self.min_max[el] = [transformed.min(), transformed.max()]
+
+        self.columns = df.columns
+
+        self.final_scaler.fit(df.to_numpy())
+
+        self.fitted = True
+
+    def transform(self, df: pd.DataFrame) -> torch.Tensor:
+        self._check_df(df)
+        df = df.copy()
+
+        for el in df.columns:
+            if is_numeric_dtype(df[el]) or is_bool_dtype(df[el]):
+
+                mask = df[el].isna()
+                if mask.any():
+                    df[f"{el}_mask"] = mask
 
                 df[el] = df[el].fillna(0)
 
             else:
-                self.encoders[el] = OrdinalEncoder(
-                    categories=[
-                        self._get_unique_vals(df[el])
-                    ],
-                    encoded_missing_value=-1
-                )
                 df[el] = df[el].where(pd.notnull(df[el]), None)
-                transformed = self.encoders[el].fit_transform(df[el].to_numpy().reshape(-1, 1))
-
-                self.min_max[el] = [transformed.min(), transformed.max()]
+                transformed = self.encoders[el].transform(
+                    df[el].to_numpy().reshape(-1, 1)
+                )
 
                 df[el] = transformed
 
-        self.columns = df.columns
-
-        scaled = self.final_scaler.fit_transform(df.to_numpy())
-
-        self.fitted = True
+        scaled = self.final_scaler.transform(df.to_numpy())
 
         return torch.Tensor(scaled.astype(np.float32))
 
+    def fit_transform(self, df: pd.DataFrame) -> torch.Tensor:
+        self.fit(df)
+        return self.transform(df)
+
     def inverse_transform(self, tensor: torch.Tensor) -> pd.DataFrame:
         if not self.fitted:
-            raise RuntimeError('fit_transform method must be called before inverse_transform')
+            raise RuntimeError(
+                "fit_transform method must be called before inverse_transform"
+            )
 
         tensor_unscaled = self.final_scaler.inverse_transform(tensor)
 
@@ -90,17 +112,18 @@ class DataTransformer:
         for el in df.columns:
 
             if el in self.encoders:
-                df[el] = self.encoders[el].inverse_transform(
-                    df[el]
-                    .clip(
-                        lower=self.min_max[el][0],
-                        upper=self.min_max[el][1]
+                df[el] = (
+                    self.encoders[el]
+                    .inverse_transform(
+                        df[el]
+                        .clip(lower=self.min_max[el][0], upper=self.min_max[el][1])
+                        .round()
+                        .astype(int)
+                        .to_numpy()
+                        .reshape(-1, 1)
                     )
-                    .round()
-                    .astype(int)
-                    .to_numpy()
-                    .reshape(-1, 1)
-                ).reshape(-1)
+                    .reshape(-1)
+                )
 
             if el.endswith("_mask"):
                 col = el[:-5]
@@ -122,11 +145,11 @@ class DataTransformer:
 
     def get_params(self) -> dict:
         if not self.fitted:
-            raise RuntimeError('fit_transform method must be called before get_params')
+            raise RuntimeError("fit_transform method must be called before get_params")
         encoders = {}
         for col, enc in self.encoders.items():
             mi = None
-            if hasattr(enc, '_missing_indices'):
+            if hasattr(enc, "_missing_indices"):
                 mi = enc._missing_indices
 
             else:
@@ -136,56 +159,60 @@ class DataTransformer:
                 mi = [idx]
 
             encoders[col] = {
-                'categories': enc.categories_[0].tolist(),
-                'encoded_missing_value': enc.encoded_missing_value,
-                'missing_indices': mi
+                "categories": enc.categories_[0].tolist(),
+                "encoded_missing_value": enc.encoded_missing_value,
+                "missing_indices": mi,
+                "_infrequent_enabled": getattr(enc, "_infrequent_enabled", False),
+                "_n_features_outs": getattr(enc, "_n_features_outs", 1),
             }
 
         return {
-            'final_scaler': {
-                'scale_': self.final_scaler.scale_.tolist(),
-                'min_': self.final_scaler.min_.tolist(),
-                'data_min_': self.final_scaler.data_min_.tolist(),
-                'data_max_': self.final_scaler.data_max_.tolist(),
-                'feature_range': self.final_scaler.feature_range
+            "final_scaler": {
+                "scale_": self.final_scaler.scale_.tolist(),
+                "min_": self.final_scaler.min_.tolist(),
+                "data_min_": self.final_scaler.data_min_.tolist(),
+                "data_max_": self.final_scaler.data_max_.tolist(),
+                "feature_range": self.final_scaler.feature_range,
             },
-            'encoders': encoders,
-            'min_max': self.min_max,
-            'types': {col: str(dtype) for col, dtype in self.types.items()},
-            'columns': self.columns.tolist(),
+            "encoders": encoders,
+            "min_max": self.min_max,
+            "types": {col: str(dtype) for col, dtype in self.types.items()},
+            "columns": self.columns.tolist(),
             "apply_round": self.apply_round,
         }
 
     @classmethod
-    def save_params(cls, params: dict) -> 'DataTransformer':
+    def save_params(cls, params: dict) -> "DataTransformer":
         self = cls.__new__(cls)
 
-        fs = params['final_scaler']
-        scaler = MinMaxScaler(feature_range=tuple(fs['feature_range']))
-        scaler.scale_ = np.array(fs['scale_'])
-        scaler.min_ = np.array(fs['min_'])
-        scaler.data_min_ = np.array(fs['data_min_'])
-        scaler.data_max_ = np.array(fs['data_max_'])
+        fs = params["final_scaler"]
+        scaler = MinMaxScaler(feature_range=tuple(fs["feature_range"]))
+        scaler.scale_ = np.array(fs["scale_"])
+        scaler.min_ = np.array(fs["min_"])
+        scaler.data_min_ = np.array(fs["data_min_"])
+        scaler.data_max_ = np.array(fs["data_max_"])
         scaler.data_range_ = scaler.data_max_ - scaler.data_min_
         self.final_scaler = scaler
 
         # encoders
         self.encoders = {}
-        for col, st in params['encoders'].items():
+        for col, st in params["encoders"].items():
             enc = OrdinalEncoder(
-                categories=[st['categories']],
-                encoded_missing_value=st['encoded_missing_value']
+                categories=[st["categories"]],
+                encoded_missing_value=st["encoded_missing_value"],
             )
-            enc.categories_ = [np.array(st['categories'])]
-            enc._missing_indices = st['missing_indices']
+            enc.categories_ = [np.array(st["categories"])]
+            enc._missing_indices = st["missing_indices"]
+            enc._infrequent_enabled = st["_infrequent_enabled"]
+            enc._n_features_outs = st["_n_features_outs"]
             self.encoders[col] = enc
 
         # other
-        self.min_max = params['min_max']
-        self.types = {col: np.dtype(dt) for col, dt in params['types'].items()}
-        self.columns = pd.Index(params['columns'])
+        self.min_max = params["min_max"]
+        self.types = {col: np.dtype(dt) for col, dt in params["types"].items()}
+        self.columns = pd.Index(params["columns"])
 
-        self.apply_round = params['apply_round']
+        self.apply_round = params["apply_round"]
 
         self.fitted = True
 

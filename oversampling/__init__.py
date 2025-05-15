@@ -1,1 +1,2 @@
-from .GAN import OversampleGAN
+from .DataTransformer import DataTransformer
+from .VAE import VAEWrapper

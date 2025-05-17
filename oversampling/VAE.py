@@ -267,7 +267,7 @@ class VAEWrapper:
 
         with torch.no_grad():
             return self.data_transformer.inverse_transform(
-                self.model.from_latent(X).cpu(),
+                self.model.from_latent(X.to(self.device)).cpu(),
             )
 
     def save(self, filepath: str | Path) -> None:

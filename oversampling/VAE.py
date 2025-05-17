@@ -31,6 +31,8 @@ class VAEWrapper:
         seed: int = 42,
         leaky_relu_coef: Union[tuple[float, ...]] = 0.2,
         device: torch.device | None = None,
+        category_weight: float = 1.0,
+        nan_weight: float = 1.0,
     ):
         if isinstance(dropout, tuple):
             if len(dims) > 2:
@@ -56,6 +58,8 @@ class VAEWrapper:
         self.epochs = epochs
         self.seed = seed
         self.kl_weight = kl_weight
+        self.cross_entropy_weight = category_weight
+        self.binary_cross_entropy_weight = nan_weight
 
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
@@ -74,7 +78,12 @@ class VAEWrapper:
         logvar: torch.Tensor,
     ) -> torch.Tensor:
 
-        recon_loss = self.data_transformer.calculate_mse_vae(recon_x, x)
+        recon_loss = self.data_transformer.calculate_mse_vae(
+            recon_x,
+            x,
+            cross_entropy_weight=self.cross_entropy_weight,
+            binary_cross_entropy_weight=self.binary_cross_entropy_weight,
+        )
 
         recon_loss = recon_loss / x.size(0)
 

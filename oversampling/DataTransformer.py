@@ -5,6 +5,7 @@ import pandas as pd
 import torch
 from pandas.api.types import is_bool_dtype, is_numeric_dtype
 from sklearn.preprocessing import MinMaxScaler
+from torch.nn.functional import binary_cross_entropy, cross_entropy, mse_loss
 
 MISSING_VALUE = "__MISSING__"
 
@@ -151,31 +152,35 @@ class DataTransformer:
         return self.transform(df)
 
     def calculate_mse_vae(
-        self, reconstructed: torch.Tensor, true: torch.Tensor
+        self,
+        reconstructed: torch.Tensor,
+        true: torch.Tensor,
+        cross_entropy_weight: float,
+        binary_cross_entropy_weight: float,
     ) -> torch.Tensor:
 
-        loss = torch.nn.functional.mse_loss(
+        loss = mse_loss(
             reconstructed[:, self._ordinal_idx_list],
             true[:, self._ordinal_idx_list],
             reduction="sum",
         )
         for el in self._softmax_idx:
-            loss += 2 * torch.nn.functional.mse_loss(
-                torch.nn.functional.softmax(reconstructed[:, el[0] : el[1] + 1], dim=1),
-                (true[:, el[0] : el[1] + 1] + 1) / 2,
+            loss += cross_entropy_weight * cross_entropy(
+                reconstructed[:, el[0] : el[1] + 1],
+                true[:, el[0] : el[1] + 1].argmax(dim=1).long(),
                 reduction="sum",
             )
 
         for el in self._masked_idx:
             loss += (
-                torch.nn.functional.mse_loss(
-                    reconstructed[:, el[0]], true[:, el[0]], reduction="none"
-                )
-                * (1 - true[:, el[1]])
+                mse_loss(reconstructed[:, el[0]], true[:, el[0]], reduction="none")
+                * (0.5 - true[:, el[1]] / 2)
             ).sum()
 
-            loss += torch.nn.functional.mse_loss(
-                reconstructed[:, el[1]], true[:, el[1]], reduction="sum"
+            loss += binary_cross_entropy_weight * binary_cross_entropy(
+                (reconstructed[:, el[1]] + 1) / 2,
+                (true[:, el[1]] + 1) / 2,
+                reduction="sum",
             )
 
         return loss

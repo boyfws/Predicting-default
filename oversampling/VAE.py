@@ -112,12 +112,17 @@ class VAEWrapper:
         dropout = self.dropout
 
         encoder_layers = (
-            [nn.Linear(input_dim, dims[0]), nn.LeakyReLU(leaky[0])]
+            [
+                nn.Linear(input_dim, dims[0]),
+                nn.LayerNorm(dims[0]),
+                nn.LeakyReLU(leaky[0]),
+            ]
             + [
                 layer
                 for i in range(len(dims) - 1)
                 for layer in (
                     nn.Linear(dims[i], dims[i + 1]),
+                    nn.LayerNorm(dims[i + 1]),
                     nn.LeakyReLU(leaky[i + 1]),
                     nn.Dropout(dropout[i]) if i < len(dropout) else nn.Identity(),
                 )
@@ -126,12 +131,17 @@ class VAEWrapper:
         )
 
         decoder_layers = (
-            [nn.Linear(self.latent_dim, dims[-1]), nn.LeakyReLU(leaky[-1])]
+            [
+                nn.Linear(self.latent_dim, dims[-1]),
+                nn.LayerNorm(dims[-1]),
+                nn.LeakyReLU(leaky[-1]),
+            ]
             + [
                 layer
                 for i in range(len(dims) - 1, 0, -1)
                 for layer in (
                     nn.Linear(dims[i], dims[i - 1]),
+                    nn.LayerNorm(dims[i - 1]),
                     nn.LeakyReLU(leaky[i - 1]),
                     (
                         nn.Dropout(dropout[i - 2])

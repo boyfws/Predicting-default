@@ -160,9 +160,9 @@ class DataTransformer:
             reduction="sum",
         )
         for el in self._softmax_idx:
-            loss += torch.nn.functional.mse_loss(
+            loss += 2 * torch.nn.functional.mse_loss(
                 torch.nn.functional.softmax(reconstructed[:, el[0] : el[1] + 1], dim=1),
-                true[:, el[0] : el[1] + 1],
+                (true[:, el[0] : el[1] + 1] + 1) / 2,
                 reduction="sum",
             )
 

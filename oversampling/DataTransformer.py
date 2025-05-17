@@ -1,9 +1,10 @@
+from collections import OrderedDict
+
 import numpy as np
 import pandas as pd
 import torch
 from pandas.api.types import is_bool_dtype, is_numeric_dtype
 from sklearn.preprocessing import MinMaxScaler
-from collections import OrderedDict
 
 MISSING_VALUE = "__MISSING__"
 
@@ -27,15 +28,14 @@ class DataTransformer:
 
     def _prepare_indices(self) -> None:
         self._softmax_idx = {
-            tuple(self._columns_data[el]["one_hot"]["one_hot_idx"]): el for el in self._columns_data
+            tuple(self._columns_data[el]["one_hot"]["one_hot_idx"]): el
+            for el in self._columns_data
             if len(self._columns_data[el]["one_hot"]["one_hot_idx"]) != 0
         }
 
         self._masked_idx = {
-            (
-                self._columns_data[el]["col_idx"],
-                self._columns_data[el]["mask_idx"]
-            ): el for el in self._columns_data
+            (self._columns_data[el]["col_idx"], self._columns_data[el]["mask_idx"]): el
+            for el in self._columns_data
             if self._columns_data[el]["mask_idx"] is not None
         }
 
@@ -43,7 +43,7 @@ class DataTransformer:
             self._columns_data[el]["col_idx"]: el
             for el in self._columns_data
             if self._columns_data[el]["mask_idx"] is None
-               and self._columns_data[el]["col_idx"] is not None
+            and self._columns_data[el]["col_idx"] is not None
         }
         self._ordinal_idx_list = list(self._ordinal_idx.keys())
 
@@ -63,8 +63,7 @@ class DataTransformer:
                 "one_hot": {
                     "categories": [],  # List of categories
                     "one_hot_idx": [],  # Start and end idx
-                }
-
+                },
             }
 
             if is_numeric_dtype(df[el]) or is_bool_dtype(df[el]):
@@ -87,8 +86,13 @@ class DataTransformer:
             else:
                 cat_df = pd.get_dummies(df[el], dummy_na=True)
                 cat_df.columns = cat_df.columns.fillna(MISSING_VALUE)
-                self._columns_data[el]["one_hot"]["categories"] = cat_df.columns.to_list()
-                self._columns_data[el]["one_hot"]["one_hot_idx"] = [i, i + cat_df.shape[1] - 1]
+                self._columns_data[el]["one_hot"][
+                    "categories"
+                ] = cat_df.columns.to_list()
+                self._columns_data[el]["one_hot"]["one_hot_idx"] = [
+                    i,
+                    i + cat_df.shape[1] - 1,
+                ]
                 i += cat_df.shape[1]
 
                 for col in cat_df.columns:
@@ -103,9 +107,7 @@ class DataTransformer:
 
     def transform(self, df: pd.DataFrame) -> torch.Tensor:
         if not self._fitted:
-            raise RuntimeError(
-                "fit method must be called before transform"
-            )
+            raise RuntimeError("fit method must be called before transform")
 
         self._check_df(df)
 
@@ -126,7 +128,9 @@ class DataTransformer:
                 cat_df.columns = cat_df.columns.fillna(MISSING_VALUE)
                 cat_df_cols_set = set(cat_df.columns)
 
-                extra = cat_df_cols_set - set(self._columns_data[el]["one_hot"]["categories"])
+                extra = cat_df_cols_set - set(
+                    self._columns_data[el]["one_hot"]["categories"]
+                )
 
                 if extra:
                     raise ValueError(f"Unexpected categories: {extra}")
@@ -138,9 +142,7 @@ class DataTransformer:
                         new_df[f"{el}_{col}"] = cat_df[col]
 
         return torch.tensor(
-            self._final_scaler.transform(
-                pd.DataFrame(new_df).to_numpy()
-            ),
+            self._final_scaler.transform(pd.DataFrame(new_df).to_numpy()),
             dtype=torch.float32,
         )
 
@@ -149,58 +151,53 @@ class DataTransformer:
         return self.transform(df)
 
     def calculate_mse_vae(
-            self,
-            reconstructed: torch.Tensor,
-            true: torch.Tensor
+        self, reconstructed: torch.Tensor, true: torch.Tensor
     ) -> torch.Tensor:
 
         loss = torch.nn.functional.mse_loss(
             reconstructed[:, self._ordinal_idx_list],
             true[:, self._ordinal_idx_list],
-            reduction="sum"
+            reduction="sum",
         )
         for el in self._softmax_idx:
             loss += torch.nn.functional.mse_loss(
-                torch.nn.functional.softmax(reconstructed[:, el[0]: el[1] + 1], dim=1),
-                true[:, el[0]: el[1] + 1],
-                reduction="sum"
+                torch.nn.functional.softmax(reconstructed[:, el[0] : el[1] + 1], dim=1),
+                true[:, el[0] : el[1] + 1],
+                reduction="sum",
             )
 
         for el in self._masked_idx:
             loss += (
-                    torch.nn.functional.mse_loss(
-                        reconstructed[:, el[0]],
-                        true[:, el[0]],
-                        reduction="none"
-                    ) * (
-                        1 - true[:, el[1]]
-                    )
+                torch.nn.functional.mse_loss(
+                    reconstructed[:, el[0]], true[:, el[0]], reduction="none"
+                )
+                * (1 - true[:, el[1]])
             ).sum()
 
             loss += torch.nn.functional.mse_loss(
-                reconstructed[:, el[1]],
-                true[:, el[1]],
-                reduction="sum"
+                reconstructed[:, el[1]], true[:, el[1]], reduction="sum"
             )
 
         return loss
 
     def inverse_transform(self, tensor: torch.Tensor) -> pd.DataFrame:
         if not self._fitted:
-            raise RuntimeError(
-                "fit method must be called before inverse_transform"
-            )
+            raise RuntimeError("fit method must be called before inverse_transform")
 
         tensor_unscaled = self._final_scaler.inverse_transform(tensor)
-        new_df = {value: tensor_unscaled[:, key] for key, value in self._ordinal_idx.items()}
+        new_df = {
+            value: tensor_unscaled[:, key] for key, value in self._ordinal_idx.items()
+        }
 
         for key, value in self._softmax_idx.items():
             new_df[value] = [
-                self._columns_data[value]["one_hot"]["categories"][i]
-                if self._columns_data[value]["one_hot"]["categories"][i] != MISSING_VALUE
-                else np.nan
-
-                for i in np.argmax(tensor_unscaled[:, key[0]: key[1] + 1], axis=1)
+                (
+                    self._columns_data[value]["one_hot"]["categories"][i]
+                    if self._columns_data[value]["one_hot"]["categories"][i]
+                    != MISSING_VALUE
+                    else np.nan
+                )
+                for i in np.argmax(tensor_unscaled[:, key[0] : key[1] + 1], axis=1)
             ]
 
         for key, value in self._masked_idx.items():
@@ -221,9 +218,7 @@ class DataTransformer:
 
     def get_params(self) -> dict:
         if not self._fitted:
-            raise RuntimeError(
-                "fit method must be called before get_params"
-            )
+            raise RuntimeError("fit method must be called before get_params")
 
         data = {
             "columns_data": dict(self._columns_data),

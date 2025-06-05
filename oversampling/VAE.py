@@ -84,9 +84,11 @@ class EnhancedVAE(nn.Module):
 
     def compute_kl(self, mu, logvar, z):
         if self.use_vampprior:
+            # лог-плотность q(z|x)
             log_qz = -0.5 * torch.sum(
-                1 + logvar + torch.log(2 * torch.tensor(math.pi)), dim=1
+                ((z - mu) ** 2) / logvar.exp() + logvar + math.log(2 * math.pi), dim=1
             )
+            #  p(z) ~ VampPrior
             log_pz = self.vamp(z)
             return torch.mean(log_qz - log_pz)
         else:

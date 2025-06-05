@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 import torch
 
-from oversampling.VAE import VAEWrapper
+from oversampling.VAEWrapper import VAEWrapper
 
 test_data = pd.DataFrame(
     {

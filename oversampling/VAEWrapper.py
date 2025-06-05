@@ -79,8 +79,7 @@ class VAEWrapper:
         mu: torch.Tensor,
         logvar: torch.Tensor,
         z: torch.Tensor,
-    ) -> torch.Tensor:
-
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         recon_loss = self.data_transformer.calculate_mse_vae(
             recon_x,
             x,
@@ -92,7 +91,7 @@ class VAEWrapper:
 
         kl_loss = self.model.compute_kl(mu, logvar, z)
 
-        return recon_loss + self.kl_weight * kl_loss
+        return recon_loss, kl_loss
 
     def _check_fit(self):
         if not self.fitted:
@@ -162,16 +161,18 @@ class VAEWrapper:
 
                 x_recon, mu, logvar, z = self.model(real_batch)
 
-                loss = self._vae_loss(x_recon, real_batch, mu, logvar, z)
+                recon_loss, kl_div = self._vae_loss(x_recon, real_batch, mu, logvar, z)
 
-                loss.backward()
+                (recon_loss + self.kl_weight * kl_div).backward()
+
                 self.optim.step()
 
-                epoch_loss.append(loss.item())
+                epoch_loss.append(recon_loss.item())
 
                 if i != len(loader) - 1:
                     dict_to_print = {
-                        "Loss": f"{loss.item():.4f}",
+                        "Recon Loss": f"{recon_loss.item():.4f}",
+                        "KL Div": f"{kl_div.item():.4f}",
                     }
 
                     pbar.set_postfix(dict_to_print)

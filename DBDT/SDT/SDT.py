@@ -24,22 +24,22 @@ class SDT(nn.Module):
         self.value = nn.Parameter(torch.empty(2**depth, output_dim))
         nn.init.xavier_uniform_(self.value)
 
+        d = (
+            torch.arange(self.depth)
+            .repeat_interleave(2 ** torch.arange(self.depth))
+        )
+        self.register_buffer("d", d)
+
     def forward(self, x, left_mask, right_mask):
         device = x.device
 
         predicted_probs = self.splitter(x)  # [Batch_size, 2 ** depth - 1]
 
         if self.regularization:
-            d = (
-                torch.arange(self.depth)
-                .repeat_interleave(2 ** torch.arange(self.depth))
-                .to(device)
-            )
-
             reg_term = (
                 -0.5
                 * (
-                    0.5**d
+                    0.5 ** self.d
                     * torch.log(
                         torch.clamp(predicted_probs * (1 - predicted_probs), min=1e-5)
                     )

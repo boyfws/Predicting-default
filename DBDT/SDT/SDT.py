@@ -61,15 +61,20 @@ class SDT(nn.Module):
 
         sign = torch.sign(self.value)  # [L, D]
         logval = torch.log(torch.clamp(self.value.abs(), min=1e-10))  # [L, D]
-        ret = logval + accum_probs  # [B, L, D]
 
-        pos_mask = (sign > 0).float()
-        neg_mask = (sign < 0).float()
+        logval = logval.unsqueeze(0)  # [1, L, D]
+        ret = accum_probs + logval  # [B, L, D]
 
-        log_pos = torch.logsumexp(ret + torch.log(pos_mask + 1e-12), dim=1)
-        log_neg = torch.logsumexp(ret + torch.log(neg_mask + 1e-12), dim=1)
+        pos_mask = (sign > 0).unsqueeze(0)  # [1, L, D]
+        neg_mask = (sign < 0).unsqueeze(0)  # [1, L, D]
 
-        value = torch.exp(log_pos) - torch.exp(log_neg)
+        ret_pos = ret.masked_fill(~pos_mask, -float("inf"))  # [B, L, D]
+        ret_neg = ret.masked_fill(~neg_mask, -float("inf"))  # [B, L, D]
+
+        log_pos = torch.logsumexp(ret_pos, dim=1)  # [B, D]
+        log_neg = torch.logsumexp(ret_neg, dim=1)  # [B, D]
+
+        value = torch.exp(log_pos) - torch.exp(log_neg)  # [B, D]
 
         return value, reg_term
 

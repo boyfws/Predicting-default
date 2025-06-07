@@ -105,7 +105,7 @@ class Validator:
             score = -1
             self.console.print(
                 Panel(
-                    "[red]❌ Test failed with red, yellow, green shares"
+                    "[red]❌ Test failed with red, yellow, green shares "
                     + f"{(r / ryg_sum):.2f}, "
                     + f"{(y / ryg_sum):.2f}, {(g / ryg_sum):.2f}[/red]",
                     title=title,
@@ -377,7 +377,7 @@ class Validator:
             self.console.print(
                 Panel(
                     "[yellow]⚠️ Intermediate result with "
-                    + f"{r_share:.2f} , {y_share:.2f} , {g_share:.2f} "
+                    + f"{r_share:.2f}, {y_share:.2f}, {g_share:.2f} "
                     + "shares for red, yellow, green scores[/yellow]",
                     title=title,
                 )

@@ -23,7 +23,7 @@ class BoosterWrapper(BaseEstimator):
         epochs: int,
         batch_size: int,
         learning_rate: float,
-        loss: nn.Module,
+        loss: nn.Module,  # Reduction == sum
         verbose: bool = False,
         t: float = 1,
         compile: bool = True,
@@ -110,7 +110,7 @@ class BoosterWrapper(BaseEstimator):
                 pred = self.base.fit_forward(batch, target, self.loss)
 
                 with torch.no_grad():
-                    loss = self.loss(pred, target)
+                    loss = self.loss(pred, target) / bs
 
                 self.optim.step()
 

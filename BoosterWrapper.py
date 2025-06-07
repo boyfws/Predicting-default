@@ -155,3 +155,6 @@ class BoosterWrapper(BaseEstimator):
                 res.append(pred.cpu())
 
             return torch.cat(res, dim=0).numpy()
+
+    def set_debug(self, flag: bool) -> None:
+        self.base.debug = flag

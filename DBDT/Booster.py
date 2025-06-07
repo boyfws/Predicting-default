@@ -25,6 +25,7 @@ class Booster(nn.Module):
         self.depth = depth
         self.regularization_coef = regularization_coef
         self.n_estimators = n_estimators
+        self.debug = False
 
         self._create_models(
             regularization_coef=regularization_coef,
@@ -95,6 +96,13 @@ class Booster(nn.Module):
 
             loss = F.mse_loss(update, -grad)
 
+            if self.debug:
+                print(f"Tree-{m}")
+                print(f"Grad {grad}")
+                print(f"Update {update}")
+                print(f"Reg term {reg_term}")
+                print(f"Tree loss {loss}")
+
             if reg_term is not None and self.regularization_coef != 0.0:
                 loss += self.regularization_coef * reg_term
 
@@ -106,8 +114,14 @@ class Booster(nn.Module):
 
     def forward(self, X: torch.Tensor):
         output = 0.0
-        for model in self.models:
+        for i, model in enumerate(self.models):
             update, _ = model(X, self.left_mask, self.right_mask)
+
+            if self.debug:
+                print(f"Tree-{i}")
+                print(f"Update: {update}")
+                print()
+
             output += self.learning_rate * update
 
         return output

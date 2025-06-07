@@ -97,11 +97,13 @@ class Booster(nn.Module):
             loss = F.mse_loss(update, -grad)
 
             if self.debug:
+                print()
                 print(f"Tree-{m}")
                 print(f"Grad {grad}")
                 print(f"Update {update}")
                 print(f"Reg term {reg_term}")
                 print(f"Tree loss {loss}")
+                print()
 
             if reg_term is not None and self.regularization_coef != 0.0:
                 loss += self.regularization_coef * reg_term

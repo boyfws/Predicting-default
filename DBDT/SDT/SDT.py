@@ -44,8 +44,7 @@ class SDT(nn.Module):
                         torch.clamp(predicted_probs * (1 - predicted_probs), min=1e-5)
                     )
                 )
-                .mean(dim=1)
-                .sum()
+                .mean()
             )
 
         else:

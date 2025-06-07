@@ -49,20 +49,22 @@ class BoosterWrapper(BaseEstimator):
         )
 
     def _build_model(self, input_dim: int) -> None:
-        self.base = Booster(
-            input_dim=input_dim,
-            output_dim=self.output_dim,
-            depth=self.depth,
-            n_estimators=self.n_estimators,
-            learning_rate=self.booster_learning_rate,
-            regularization_coef=self.regularization_coef,
-            t=self.t,
-        )
-        if self.compile:
-            for el in self.base.models:
-                el.compile(**self.compile_params)
+        if not hasattr(self, "base"):
+            self.base = Booster(
+                input_dim=input_dim,
+                output_dim=self.output_dim,
+                depth=self.depth,
+                n_estimators=self.n_estimators,
+                learning_rate=self.booster_learning_rate,
+                regularization_coef=self.regularization_coef,
+                t=self.t,
+            )
+            if self.compile:
+                for el in self.base.models:
+                    el.compile(**self.compile_params)
 
-        self.base.to(self.device)
+            self.base.to(self.device)
+            self.optim = torch.optim.Adam(self.base.parameters(), lr=self.learning_rate)
 
     def fit(self, X: npt.NDArray, y: npt.NDArray) -> None:
         X = torch.tensor(X).float()
@@ -81,7 +83,6 @@ class BoosterWrapper(BaseEstimator):
             prefetch_factor=4,
         )
 
-        self.optim = torch.optim.Adam(self.base.parameters(), lr=self.learning_rate)
         epoch_len = len(str(self.epochs))
 
         for epoch in range(self.epochs):

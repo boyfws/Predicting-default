@@ -54,7 +54,7 @@ class IncomePredictor:
         profit = self._profit_calc(amnt, term)
 
         profit_giv = profit[~pred]
-        def_giv = y[~pred]
+        def_giv = y[~pred].astype(bool)
         amnt_giv = amnt[~pred]
 
         no_default_profit = profit_giv[~def_giv].sum()
@@ -95,7 +95,7 @@ class IncomePredictor:
             pred = probs >= t
 
             profit_giv = profit[~pred]
-            def_giv = y[~pred]
+            def_giv = y[~pred].astype(bool)
             amnt_giv = amnt[~pred]
 
             income = profit_giv[~def_giv].sum() - amnt_giv[def_giv].sum() * (1 - self.recovery_rate)

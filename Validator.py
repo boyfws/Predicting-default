@@ -248,7 +248,7 @@ class Validator:
             n_buckets=10,
             plot=self.plot_graphs,
             figsize=self.figsize,
-            strategy="uniform",
+            strategy="quantile",
         )
 
         fact = result_df["actual_rate"].to_numpy()

@@ -13,7 +13,7 @@ class IncomePredictor:
             interest_rate: float,
     ) -> None:
         """
-        Annuity payment-s
+        Annuity payments
 
         :param amount_col:
         :param term_month_col:
@@ -120,6 +120,9 @@ class IncomePredictor:
         t = [el[0] for el in results]
         income = [el[1] for el in results]
         funded_sum = [el[2] for el in results]
+        fund_yield = [
+            inc * 100 / fund_s for inc, fund_s in zip(income, funded_sum)
+        ]
 
         if plot:
             plt.figure(figsize=figsize)
@@ -133,14 +136,29 @@ class IncomePredictor:
             plt.title("Optimal percentage yield  based on threshold")
             plt.plot(
                 t,
-                (
-                    inc * 100 / fund_s for inc, fund_s in zip(income, funded_sum)
-                )
+                fund_yield
             )
             plt.xlabel("Threshold")
             plt.ylabel("Yield %")
             plt.show()
 
+        inc_arg_max = np.argmax(income)
+        yield_arg_max = np.argmax(fund_yield)
+
+        return {
+            "Optimal Income": {
+                "t": t[inc_arg_max],
+                "income": income[inc_arg_max],
+                "funded_sum": funded_sum[inc_arg_max],
+                "yield": fund_yield[inc_arg_max],
+            },
+            "Optimal Yield": {
+                "t": t[yield_arg_max],
+                "income": income[yield_arg_max],
+                "funded_sum": funded_sum[yield_arg_max],
+                "yield": fund_yield[yield_arg_max],
+            }
+        }
 
 
 

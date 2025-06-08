@@ -83,7 +83,7 @@ class IncomePredictor:
 
         profit = self._profit_calc(amnt, term)
 
-        t_list = np.linspace(probs.min() - 1e-7, probs.max() + 1e-7, 1000)
+        t_list = np.linspace(probs.min() - 1e-3, probs.max() + 1e-3, 200)
 
         def _calc_income(
                 t: float,
@@ -121,7 +121,7 @@ class IncomePredictor:
         income = [el[1] for el in results]
         funded_sum = [el[2] for el in results]
         fund_yield = [
-            inc * 100 / fund_s for inc, fund_s in zip(income, funded_sum)
+            inc * 100 / (fund_s + 1e-8) for inc, fund_s in zip(income, funded_sum)
         ]
 
         if plot:

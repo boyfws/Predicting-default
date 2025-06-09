@@ -1,16 +1,16 @@
-import pandas as pd
-import numpy as np
-from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from joblib import Parallel, delayed
 
 
 class IncomePredictor:
     def __init__(
-            self,
-            amount_col: str,
-            term_month_col: str,
-            recovery_rate: float,
-            interest_rate: float,
+        self,
+        amount_col: str,
+        term_month_col: str,
+        recovery_rate: float,
+        interest_rate: float,
     ) -> None:
         """
         Annuity payments
@@ -18,7 +18,8 @@ class IncomePredictor:
         :param amount_col:
         :param term_month_col:
         :param recovery_rate:
-        :param interest_rate: Annual interest rate in fractional format, e.g., 13% → 0.13
+        :param interest_rate: Annual interest rate in
+        fractional format, e.g., 13% → 0.13
         """
         assert 0 <= interest_rate <= 1
         assert 0 <= recovery_rate <= 1, "Recovery rate must be between 0 and 1"
@@ -29,9 +30,9 @@ class IncomePredictor:
         self.interest_rate = interest_rate
 
     def _profit_calc(
-            self,
-            amnt: np.ndarray,
-            term_months: np.ndarray,
+        self,
+        amnt: np.ndarray,
+        term_months: np.ndarray,
     ):
         r = self.interest_rate / 12
         A = amnt * r * (1 + r) ** term_months / ((1 + r) ** term_months - 1)
@@ -40,11 +41,11 @@ class IncomePredictor:
         return total_paid - amnt
 
     def calculate_income(
-            self,
-            X: pd.DataFrame,
-            y: np.ndarray,
-            probs: np.ndarray,
-            t: float,
+        self,
+        X: pd.DataFrame,
+        y: np.ndarray,
+        probs: np.ndarray,
+        t: float,
     ):
         pred = probs >= t
 
@@ -62,22 +63,16 @@ class IncomePredictor:
 
         return {
             "income": no_default_profit - default_loss,
-            "funded_sum": amnt_giv.sum()
+            "funded_sum": amnt_giv.sum(),
         }
 
     def _find_optimal_t(
-            self,
-            X: pd.DataFrame,
-            y: np.ndarray,
-            probs: np.ndarray,
-            n_jobs: int = -1,
-    ) -> list[
-        tuple[
-            float,
-            float,
-            float
-        ]
-    ]:
+        self,
+        X: pd.DataFrame,
+        y: np.ndarray,
+        probs: np.ndarray,
+        n_jobs: int = -1,
+    ) -> list[tuple[float, float, float]]:
         amnt = X[self.amount_col].to_numpy().astype(np.float32)
         term = X[self.term_month_col].to_numpy().astype(np.float32)
 
@@ -86,11 +81,11 @@ class IncomePredictor:
         t_list = np.linspace(probs.min() - 1e-3, probs.max() + 1e-3, 200)
 
         def _calc_income(
-                t: float,
-                y: np.ndarray,
-                probs: np.ndarray,
-                profit: np.ndarray,
-                amnt: np.ndarray,
+            t: float,
+            y: np.ndarray,
+            probs: np.ndarray,
+            profit: np.ndarray,
+            amnt: np.ndarray,
         ) -> tuple[float, float, float]:
             pred = probs >= t
 
@@ -98,7 +93,9 @@ class IncomePredictor:
             def_giv = y[~pred].astype(bool)
             amnt_giv = amnt[~pred]
 
-            income = profit_giv[~def_giv].sum() - amnt_giv[def_giv].sum() * (1 - self.recovery_rate)
+            income = profit_giv[~def_giv].sum() - amnt_giv[def_giv].sum() * (
+                1 - self.recovery_rate
+            )
             return t, income, amnt_giv.sum()
 
         results = Parallel(n_jobs=n_jobs)(
@@ -107,13 +104,13 @@ class IncomePredictor:
         return results
 
     def find_optimal_t(
-            self,
-            X: pd.DataFrame,
-            y: np.ndarray,
-            probs: np.ndarray,
-            n_jobs: int = -1,
-            plot: bool = True,
-            figsize: tuple[int, int] = (12, 6),
+        self,
+        X: pd.DataFrame,
+        y: np.ndarray,
+        probs: np.ndarray,
+        n_jobs: int = -1,
+        plot: bool = True,
+        figsize: tuple[int, int] = (12, 6),
     ):
         results = self._find_optimal_t(X, y, probs, n_jobs=n_jobs)
 
@@ -134,10 +131,7 @@ class IncomePredictor:
 
             plt.figure(figsize=figsize)
             plt.title("Optimal percentage yield  based on threshold")
-            plt.plot(
-                t,
-                fund_yield
-            )
+            plt.plot(t, fund_yield)
             plt.xlabel("Threshold")
             plt.ylabel("Yield %")
             plt.show()
@@ -157,9 +151,5 @@ class IncomePredictor:
                 "income": income[yield_arg_max],
                 "funded_sum": funded_sum[yield_arg_max],
                 "yield": fund_yield[yield_arg_max],
-            }
+            },
         }
-
-
-
-

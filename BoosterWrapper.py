@@ -22,7 +22,8 @@ class BoosterWrapper(BaseEstimator):
         regularization_coef: float,
         epochs: int,
         batch_size: int,
-        learning_rate: float,
+        learning_rate_value: float,
+        learning_rate_splitter: float,
         loss: nn.Module,  # Reduction == sum,
         reg_lambda: float = 1e-7,
         verbose: bool = False,
@@ -39,7 +40,8 @@ class BoosterWrapper(BaseEstimator):
         self.t = t
         self.epochs = epochs
         self.batch_size = batch_size
-        self.learning_rate = learning_rate
+        self.learning_rate_value = learning_rate_value
+        self.learning_rate_splitter = learning_rate_splitter
         self.verbose = verbose
         self.loss = loss
         self.reg_lambda = reg_lambda
@@ -67,7 +69,16 @@ class BoosterWrapper(BaseEstimator):
                     el.compile(**self.compile_params)
 
             self.base.to(self.device)
-            self.optim = torch.optim.Adam(self.base.parameters(), lr=self.learning_rate)
+
+            val_params = [el.value for el in self.base.models]
+            splitter_params = [p for el in self.base.models for p in el.splitter.parameters()]
+
+            self.optim = torch.optim.Adam(
+                [
+                    {"params": val_params, "lr": self.learning_rate_value},
+                    {"params": splitter_params, "lr": self.learning_rate_splitter},
+                ]
+            )
 
     def fit(self, X: npt.NDArray, y: npt.NDArray) -> None:
         X = torch.tensor(X).float()

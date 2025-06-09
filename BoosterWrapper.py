@@ -23,7 +23,8 @@ class BoosterWrapper(BaseEstimator):
         epochs: int,
         batch_size: int,
         learning_rate: float,
-        loss: nn.Module,  # Reduction == sum
+        loss: nn.Module,  # Reduction == sum,
+        reg_lambda: float = 1e-7,
         verbose: bool = False,
         t: float = 1,
         compile: bool = True,
@@ -41,6 +42,7 @@ class BoosterWrapper(BaseEstimator):
         self.learning_rate = learning_rate
         self.verbose = verbose
         self.loss = loss
+        self.reg_lambda = reg_lambda
         self.compile = compile
         self.compile_params = compile_params
 
@@ -58,6 +60,7 @@ class BoosterWrapper(BaseEstimator):
                 learning_rate=self.booster_learning_rate,
                 regularization_coef=self.regularization_coef,
                 t=self.t,
+                reg_lambda=self.reg_lambda,
             )
             if self.compile:
                 for el in self.base.models:

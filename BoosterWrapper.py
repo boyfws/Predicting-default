@@ -71,7 +71,9 @@ class BoosterWrapper(BaseEstimator):
             self.base.to(self.device)
 
             val_params = [el.value for el in self.base.models]
-            splitter_params = [p for el in self.base.models for p in el.splitter.parameters()]
+            splitter_params = [
+                p for el in self.base.models for p in el.splitter.parameters()
+            ]
 
             self.optim = torch.optim.Adam(
                 [

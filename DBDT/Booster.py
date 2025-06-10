@@ -94,16 +94,14 @@ class Booster(nn.Module):
 
             grad = torch.autograd.grad(loss, pred, create_graph=True)[0]
 
-            hess = torch.autograd.grad(
-                grad.sum(), pred
-            )[0]  # Assume hess >= 0
+            hess = torch.autograd.grad(grad.sum(), pred)[0]  # Assume hess >= 0
 
             update, reg_term = self.models[m](X, self.left_mask, self.right_mask)
 
             with torch.no_grad():
                 hess_clipped = hess.clamp(min=1e-3)
 
-                target = (-grad / (hess_clipped + self.reg_lambda))
+                target = -grad / (hess_clipped + self.reg_lambda)
 
             grad_loss = F.mse_loss(update, target)
 
